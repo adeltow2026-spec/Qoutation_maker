@@ -1,0 +1,6 @@
+{
+  "name": "Touch Of Wood — Quotation Maker",
+  "description": "Official quotation and costing maker for Touch Of Wood Decoration Works LLC with UAE TRN, Wio Bank details, and 11-point terms.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
