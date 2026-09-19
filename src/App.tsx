@@ -385,12 +385,13 @@ export default function App() {
     : undefined;
 
   return (
-    <div
-      id="app-root-shell"
-      className={`flex min-h-screen bg-slate-100 text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] ${
-        printingQuote ? 'no-print' : ''
-      }`}
-    >
+    <>
+      <div
+        id="app-root-shell"
+        className={`flex min-h-screen bg-slate-100 text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] ${
+          printingQuote ? 'no-print' : ''
+        }`}
+      >
       {/* Sidebar Navigation */}
       <Sidebar
         currentPage={currentPage}
@@ -580,19 +581,20 @@ export default function App() {
         onSaveUser={handleSaveUser}
         onDeleteUser={handleDeleteUser}
       />
-
-      {/* Print / PDF Fullscreen Modal Overlay */}
-      {printingQuote && (
-        <PrintPreviewModal
-          quotation={printingQuote}
-          customer={targetCustomerForPrint}
-          settings={db.settings}
-          onClose={closePrintModal}
-        />
-      )}
-
-      {/* Global Toast Notifications */}
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
+
+    {/* Print / PDF Fullscreen Modal Overlay - rendered as sibling outside #app-root-shell */}
+    {printingQuote && (
+      <PrintPreviewModal
+        quotation={printingQuote}
+        customer={targetCustomerForPrint}
+        settings={db.settings}
+        onClose={closePrintModal}
+      />
+    )}
+
+    {/* Global Toast Notifications */}
+    <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+  </>
   );
 }

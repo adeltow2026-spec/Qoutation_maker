@@ -194,6 +194,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           <head>
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <base href="${window.location.origin}/" />
             <title>Quotation ${quotation.quoteNo} - ${quotation.customerName || 'Client'}</title>
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -207,12 +208,31 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
             ${
               autoTriggerPrint
                 ? `<script>
-                    window.addEventListener('load', function() {
-                      setTimeout(function() {
-                        window.focus();
-                        window.print();
-                      }, 350);
-                    });
+                    function triggerPrint() {
+                      window.focus();
+                      window.print();
+                    }
+                    var imgs = document.images;
+                    var total = imgs ? imgs.length : 0;
+                    var loaded = 0;
+                    if (total === 0) {
+                      setTimeout(triggerPrint, 350);
+                    } else {
+                      function checkAll() {
+                        loaded++;
+                        if (loaded >= total) {
+                          setTimeout(triggerPrint, 300);
+                        }
+                      }
+                      for (var i = 0; i < total; i++) {
+                        if (imgs[i].complete) {
+                          checkAll();
+                        } else {
+                          imgs[i].addEventListener('load', checkAll);
+                          imgs[i].addEventListener('error', checkAll);
+                        }
+                      }
+                    }
                   </script>`
                 : ''
             }

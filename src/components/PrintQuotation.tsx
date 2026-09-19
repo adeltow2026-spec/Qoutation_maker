@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Quotation, CompanySettings, Customer } from '../types';
 import {
   formatMoney,
@@ -26,6 +26,27 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
   showTerms = true,
   showPhotos = true,
 }) => {
+  const [logoSrc, setLogoSrc] = useState<string>(
+    settings.logoUrl || '/touch_of_wood_logo.jpg'
+  );
+  const [hasLogoError, setHasLogoError] = useState<boolean>(false);
+
+  useEffect(() => {
+    setLogoSrc(settings.logoUrl || '/touch_of_wood_logo.jpg');
+    setHasLogoError(false);
+  }, [settings.logoUrl]);
+
+  const handleLogoError = () => {
+    // If the configured logo failed, try alternative uploaded logo names
+    if (logoSrc !== '/logo.jpg') {
+      setLogoSrc('/logo.jpg');
+    } else if (logoSrc !== '/touch_of_wood_logo.jpg') {
+      setLogoSrc('/touch_of_wood_logo.jpg');
+    } else {
+      setHasLogoError(true);
+    }
+  };
+
   const overheadPct = settings.overheadPct ?? 30;
   const markupPct = settings.markupPct ?? 40;
 
@@ -71,20 +92,21 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
       {/* Letterhead Header */}
       <div className="flex justify-between items-start border-b-2 border-amber-900/40 pb-5 mb-6 print-avoid-break">
         <div className="flex items-start gap-4">
-          {/* Logo */}
-          {settings.logoUrl ? (
-            <div className="h-16 w-20 flex-shrink-0 flex items-center justify-center p-1 bg-white rounded-lg border border-slate-200 shadow-2xs">
+          {/* Company Official Logo */}
+          {!hasLogoError && logoSrc ? (
+            <div className="h-20 w-24 sm:h-22 sm:w-28 flex-shrink-0 flex items-center justify-center p-1 bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
               <img
-                src={settings.logoUrl}
-                alt={settings.name}
-                className="max-h-full max-w-full object-contain"
+                src={logoSrc}
+                alt={settings.name || 'Touch Of Wood'}
+                className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
+                onError={handleLogoError}
               />
             </div>
           ) : (
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-900 to-amber-950 text-amber-100 flex flex-col items-center justify-center shadow-xs flex-shrink-0 border border-amber-800">
-              <span className="text-xs font-black tracking-widest text-amber-200">TOW</span>
-              <span className="text-[7px] uppercase tracking-tighter opacity-80">WOOD</span>
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-900 to-amber-950 text-amber-100 flex flex-col items-center justify-center shadow-xs flex-shrink-0 border border-amber-800">
+              <span className="text-sm font-black tracking-widest text-amber-200">TOW</span>
+              <span className="text-[8px] uppercase tracking-tighter opacity-80">WOOD</span>
             </div>
           )}
 
