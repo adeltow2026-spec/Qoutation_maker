@@ -113,3 +113,54 @@ export const CATEGORY_THEMES = [
   { name: 'Rose', bg: 'bg-rose-50/80', border: 'border-rose-200', text: 'text-rose-900', badge: 'bg-rose-100 text-rose-800' },
   { name: 'Cyan', bg: 'bg-cyan-50/80', border: 'border-cyan-200', text: 'text-cyan-900', badge: 'bg-cyan-100 text-cyan-800' },
 ];
+
+export function numberToWords(amount: number, currency: string = 'AED'): string {
+  const num = Math.round(amount * 100) / 100;
+  if (isNaN(num) || num <= 0) return '';
+
+  const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+    'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  function convertSection(n: number): string {
+    if (n === 0) return '';
+    if (n < 20) return units[n];
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + units[n % 10] : '');
+    return units[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convertSection(n % 100) : '');
+  }
+
+  const integerPart = Math.floor(num);
+  const decimalPart = Math.round((num - integerPart) * 100);
+
+  if (integerPart === 0 && decimalPart === 0) return 'Zero';
+
+  let result = '';
+  const billions = Math.floor(integerPart / 1000000000);
+  const millions = Math.floor((integerPart % 1000000000) / 1000000);
+  const thousands = Math.floor((integerPart % 1000000) / 1000);
+  const remainder = integerPart % 1000;
+
+  if (billions > 0) result += convertSection(billions) + ' Billion ';
+  if (millions > 0) result += convertSection(millions) + ' Million ';
+  if (thousands > 0) result += convertSection(thousands) + ' Thousand ';
+  if (remainder > 0) result += convertSection(remainder) + ' ';
+
+  const currencyNames: Record<string, { main: string; sub: string }> = {
+    AED: { main: 'UAE Dirhams', sub: 'Fils' },
+    USD: { main: 'US Dollars', sub: 'Cents' },
+    EUR: { main: 'Euros', sub: 'Cents' },
+    GBP: { main: 'Pounds Sterling', sub: 'Pence' },
+    SAR: { main: 'Saudi Riyals', sub: 'Halalas' },
+    QAR: { main: 'Qatari Riyals', sub: 'Dirhams' },
+  };
+
+  const curr = currencyNames[currency.toUpperCase()] || { main: currency, sub: 'Cents' };
+  let formatted = `${curr.main} ${result.trim()}`;
+
+  if (decimalPart > 0) {
+    formatted += ` and ${convertSection(decimalPart)} ${curr.sub}`;
+  }
+
+  return formatted + ' Only';
+}
+

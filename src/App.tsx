@@ -20,7 +20,7 @@ import { CustomerModal } from './components/CustomerModal';
 import { ProductModal } from './components/ProductModal';
 import { UserModal } from './components/UserModal';
 import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
-import { PrintQuotation } from './components/PrintQuotation';
+import { PrintPreviewModal } from './components/PrintPreviewModal';
 import { DashboardView } from './views/DashboardView';
 import { QuotationEditorView } from './views/QuotationEditorView';
 import { QuotationsListView } from './views/QuotationsListView';
@@ -29,7 +29,6 @@ import { ProductsView } from './views/ProductsView';
 import { ReportsView } from './views/ReportsView';
 import { SettingsView } from './views/SettingsView';
 import { INITIAL_DATABASE } from './data/seedData';
-import { Printer, ArrowLeft, X } from 'lucide-react';
 
 export default function App() {
   const [db, setDb] = useState<AppDatabase>(() => loadDatabase());
@@ -377,10 +376,6 @@ export default function App() {
     setPrintingQuote(quote);
   };
 
-  const executeBrowserPrint = () => {
-    window.print();
-  };
-
   const closePrintModal = () => {
     setPrintingQuote(null);
   };
@@ -390,7 +385,12 @@ export default function App() {
     : undefined;
 
   return (
-    <div className="flex min-h-screen bg-slate-100 text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
+    <div
+      id="app-root-shell"
+      className={`flex min-h-screen bg-slate-100 text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] ${
+        printingQuote ? 'no-print' : ''
+      }`}
+    >
       {/* Sidebar Navigation */}
       <Sidebar
         currentPage={currentPage}
@@ -583,58 +583,12 @@ export default function App() {
 
       {/* Print / PDF Fullscreen Modal Overlay */}
       {printingQuote && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-slate-900/80 backdrop-blur-sm overflow-y-auto">
-          {/* Top Preview Controls Bar */}
-          <div className="sticky top-0 z-10 bg-slate-900 text-white px-6 py-4 border-b border-slate-800 flex items-center justify-between no-print">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={closePrintModal}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to App
-              </button>
-              <div className="border-l border-slate-700 pl-3">
-                <span className="text-xs font-bold text-slate-200">
-                  Quotation Letterhead Preview: {printingQuote.quoteNo}
-                </span>
-                <p className="text-[11px] text-slate-400">
-                  Choose &quot;Save as PDF&quot; in the print dialog destination for official PDF export
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={executeBrowserPrint}
-                className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md shadow-blue-500/30 transition-colors cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                Print / Save PDF
-              </button>
-              <button
-                type="button"
-                onClick={closePrintModal}
-                className="p-2 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Printable Letterhead Paper */}
-          <div className="p-6 sm:p-10 flex-1 flex justify-center items-start">
-            <div className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-4xl border border-slate-200">
-              <PrintQuotation
-                quotation={printingQuote}
-                customer={targetCustomerForPrint}
-                settings={db.settings}
-              />
-            </div>
-          </div>
-        </div>
+        <PrintPreviewModal
+          quotation={printingQuote}
+          customer={targetCustomerForPrint}
+          settings={db.settings}
+          onClose={closePrintModal}
+        />
       )}
 
       {/* Global Toast Notifications */}

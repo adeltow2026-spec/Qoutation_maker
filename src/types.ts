@@ -123,3 +123,5 @@ export interface AppDatabase {
   nextQuote: number;
   nextCustomer: number;
 }
+
+declare module 'html2pdf.js';

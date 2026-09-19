@@ -8,24 +8,137 @@
   }
 }
 
+/* Page format definition for PDF & Print output */
+@page {
+  size: A4 portrait;
+  margin: 10mm 12mm 12mm 12mm;
+}
+
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  #print-area, #print-area * {
-    visibility: visible;
-  }
-  #print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background: white;
-  }
-  .no-print {
+  /* 1. Hide UI elements not meant for print */
+  .no-print,
+  .no-print *,
+  #app-root-shell,
+  #app-sidebar,
+  #app-header,
+  .toast-container {
     display: none !important;
   }
+
+  /* 2. Reset html & body: zero margins, natural document flow, no clipping */
+  html,
+  body {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 3. Strip fixed modal wrappers so the paper flows across multiple A4 pages */
+  .print-modal-overlay {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .print-paper-stage {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  .print-paper-sheet {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    transform: none !important;
+  }
+
+  #print-area {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  /* 4. Force high-fidelity color printing on graphics, borders, badges, backgrounds */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 5. Clean table pagination */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  td, th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* 6. Page-break prevention on structural blocks */
+  .print-avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-page-break-before {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  .print-page-break-after {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
 }
+
 
