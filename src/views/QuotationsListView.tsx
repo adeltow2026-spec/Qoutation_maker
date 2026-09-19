@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Quotation, Customer } from '../types';
 import { formatMoney } from '../utils/formatters';
-import { Search, Plus, Printer, Edit, Trash2, Copy, FileText } from 'lucide-react';
+import { Search, Plus, Printer, Edit, Trash2, Copy, FileText, ExternalLink } from 'lucide-react';
 
 interface QuotationsListViewProps {
   quotes: Quotation[];
@@ -103,8 +103,16 @@ export const QuotationsListView: React.FC<QuotationsListViewProps> = ({
                   const cust = customers.find((c) => c.id === q.customerId);
                   return (
                     <tr key={q.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-blue-700">
-                        {q.quoteNo}
+                      <td className="py-3.5 px-4">
+                        <button
+                          type="button"
+                          onClick={() => onOpenQuote(q)}
+                          className="font-mono font-bold text-blue-700 hover:text-blue-900 hover:underline cursor-pointer flex items-center gap-1 group text-left"
+                          title={`Open Quotation ${q.quoteNo}`}
+                        >
+                          <span>{q.quoteNo}</span>
+                          <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
+                        </button>
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900">{cust?.name || q.customerName || '—'}</div>

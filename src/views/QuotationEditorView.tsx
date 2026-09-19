@@ -392,16 +392,31 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
 
   const handleSave = () => {
     const payload = getCurrentQuotationPayload();
+    if (!payload.quoteNo.trim()) {
+      const prefix = settings.quotePrefix || 'QT';
+      const seq = Math.floor(1000 + Math.random() * 9000);
+      payload.quoteNo = `${prefix}-${new Date().getFullYear()}-${String(seq).padStart(5, '0')}`;
+    }
     onSaveQuotation(payload);
   };
 
   const handleDraft = () => {
     const payload = getCurrentQuotationPayload();
+    if (!payload.quoteNo.trim()) {
+      const prefix = settings.quotePrefix || 'QT';
+      const seq = Math.floor(1000 + Math.random() * 9000);
+      payload.quoteNo = `${prefix}-${new Date().getFullYear()}-${String(seq).padStart(5, '0')}`;
+    }
     onSaveDraft(payload);
   };
 
   const handlePrint = () => {
     const payload = getCurrentQuotationPayload();
+    if (!payload.quoteNo.trim()) {
+      const prefix = settings.quotePrefix || 'QT';
+      const seq = Math.floor(1000 + Math.random() * 9000);
+      payload.quoteNo = `${prefix}-${new Date().getFullYear()}-${String(seq).padStart(5, '0')}`;
+    }
     onPrintQuote(payload);
   };
 
@@ -427,11 +442,35 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">Quotation No:</span>
-            <span className="px-3 py-1 bg-slate-100 text-slate-800 font-mono font-bold text-xs rounded-lg border border-slate-200">
-              {quote.quoteNo}
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2.5 bg-blue-50/70 px-3 py-1.5 rounded-xl border border-blue-200">
+            <label htmlFor="quotation-number-input" className="text-xs font-bold text-blue-950 flex items-center gap-1 shrink-0">
+              <span>Quotation No:</span>
+              <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-1.5">
+              <input
+                id="quotation-number-input"
+                type="text"
+                value={quote.quoteNo}
+                onChange={(e) => setQuote({ ...quote, quoteNo: e.target.value })}
+                placeholder="e.g. QT-2026-00045"
+                className="px-2.5 py-1 text-xs sm:text-sm font-mono font-extrabold text-blue-900 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600 shadow-2xs min-w-[150px] sm:min-w-[170px]"
+                title="Click to edit quotation reference number"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const seq = Math.floor(1000 + Math.random() * 9000);
+                  const prefix = settings.quotePrefix || 'QT';
+                  const generated = `${prefix}-${new Date().getFullYear()}-${String(seq).padStart(5, '0')}`;
+                  setQuote({ ...quote, quoteNo: generated });
+                }}
+                title="Regenerate standard quotation number sequence"
+                className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-100 rounded-lg border border-blue-200 bg-white transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 

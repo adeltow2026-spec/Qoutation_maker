@@ -29,6 +29,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onOpenUserModal,
 }) => {
   const [formData, setFormData] = useState<CompanySettings>(settings);
+  const [logoError, setLogoError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const bank: BankDetails = formData.bankDetails || {
@@ -54,9 +55,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert('Please select an image smaller than 2MB.');
+        setLogoError('Please select an image smaller than 2MB.');
         return;
       }
+      setLogoError(null);
       const reader = new FileReader();
       reader.onload = () => {
         if (typeof reader.result === 'string') {
@@ -168,6 +170,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </button>
                 )}
               </div>
+              {logoError && (
+                <p className="text-[11px] text-red-600 font-semibold">{logoError}</p>
+              )}
             </div>
           </div>
 
@@ -441,6 +446,53 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 className="w-full px-3 py-2 text-xs font-mono text-left bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">Default: 40%</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Quotation Numbering & Prefix Settings */}
+        <section className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-5">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="p-2 bg-blue-50 text-blue-700 rounded-lg">
+              <FileCheck2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">
+                Quotation Numbering &amp; Identification
+              </h3>
+              <p className="text-xs text-slate-500">
+                Configure your company's official quotation numbering prefix and reference formatting
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Quotation Number Prefix
+              </label>
+              <input
+                type="text"
+                value={formData.quotePrefix || 'QT'}
+                onChange={(e) => setFormData({ ...formData, quotePrefix: e.target.value.toUpperCase() })}
+                placeholder="e.g. QT or TOW-QT"
+                className="w-full px-3 py-2 text-xs font-mono font-bold uppercase bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">
+                Standard prefix appearing at the start of generated quote numbers.
+              </span>
+            </div>
+
+            <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200 flex flex-col justify-center">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                Live Sample Output:
+              </span>
+              <div className="font-mono font-bold text-sm text-blue-900 mt-1">
+                {(formData.quotePrefix || 'QT').trim()}-{new Date().getFullYear()}-00045
+              </div>
+              <span className="text-[10px] text-slate-500 mt-0.5">
+                Each new quotation can also be freely customized or edited in the quotation editor.
+              </span>
             </div>
           </div>
         </section>

@@ -21,6 +21,7 @@ import { ProductModal } from './components/ProductModal';
 import { UserModal } from './components/UserModal';
 import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
 import { PrintPreviewModal } from './components/PrintPreviewModal';
+import { ConfirmModal } from './components/ConfirmModal';
 import { DashboardView } from './views/DashboardView';
 import { QuotationEditorView } from './views/QuotationEditorView';
 import { QuotationsListView } from './views/QuotationsListView';
@@ -50,6 +51,21 @@ export default function App() {
 
   const [driveModalOpen, setDriveModalOpen] = useState(false);
   const [userModalOpen, setUserModalOpen] = useState(false);
+
+  // In-app non-blocking confirmation dialog state (replaces iframe-blocked native confirm)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    confirmVariant?: 'danger' | 'primary' | 'warning';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   // Active user profile
   const currentUser: UserProfile =
@@ -85,15 +101,25 @@ export default function App() {
 
   const handleDeleteUser = (userId: string) => {
     if ((db.users || []).length <= 1) {
-      alert('At least one estimator user profile must remain in the system.');
+      addToast('warning', 'Action Blocked', 'At least one estimator user profile must remain in the system.');
       return;
     }
-    setDb((prev) => {
-      const remaining = (prev.users || []).filter((u) => u.id !== userId);
-      const nextActiveId = prev.currentUserId === userId ? remaining[0].id : prev.currentUserId;
-      return { ...prev, users: remaining, currentUserId: nextActiveId };
+    const userToDelete = (db.users || []).find((u) => u.id === userId);
+    setConfirmModal({
+      isOpen: true,
+      title: 'Remove Team Member?',
+      message: `Remove "${userToDelete?.name || 'this member'}" from the estimators list?`,
+      confirmText: 'Remove Member',
+      confirmVariant: 'danger',
+      onConfirm: () => {
+        setDb((prev) => {
+          const remaining = (prev.users || []).filter((u) => u.id !== userId);
+          const nextActiveId = prev.currentUserId === userId ? remaining[0].id : prev.currentUserId;
+          return { ...prev, users: remaining, currentUserId: nextActiveId };
+        });
+        addToast('info', 'Estimator Removed', userToDelete?.name);
+      },
     });
-    addToast('info', 'Estimator Removed');
   };
 
   // Active quotation in editor
@@ -103,7 +129,7 @@ export default function App() {
       .toISOString()
       .split('T')[0];
     const firstCust = db.customers[0];
-    const quoteNo = generateQuoteNumber(db.nextQuote);
+    const quoteNo = generateQuoteNumber(db.nextQuote, new Date().getFullYear(), db.settings.quotePrefix || 'QT');
     const initialScopes = [
       createBlankScope(
         '1. Custom Wood Joinery & Wall Cladding Package',
@@ -157,7 +183,7 @@ export default function App() {
     saveDatabase(db);
   }, [db]);
 
-  const addToast = (type: 'success' | 'error' | 'info', title: string, message?: string) => {
+  const addToast = (type: ToastMessage['type'], title: string, message?: string) => {
     const newToast: ToastMessage = {
       id: 'toast_' + Math.random().toString(36).substring(2, 9),
       type,
@@ -208,12 +234,19 @@ export default function App() {
   };
 
   const handleResetQuotation = () => {
-    if (confirm('Start a new quotation? Any unsaved edits to the active form will be reset.')) {
-      const newQ = createNewEmptyQuote();
-      setActiveQuotation(newQ);
-      setDb((prev) => ({ ...prev, draft: null }));
-      addToast('info', 'New Quotation Initialized');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Start New Quotation?',
+      message: 'Any unsaved edits to the active quotation will be discarded.',
+      confirmText: 'Start New',
+      confirmVariant: 'warning',
+      onConfirm: () => {
+        const newQ = createNewEmptyQuote();
+        setActiveQuotation(newQ);
+        setDb((prev) => ({ ...prev, draft: null }));
+        addToast('info', 'New Quotation Initialized');
+      },
+    });
   };
 
   const handleOpenQuoteInEditor = (quote: Quotation) => {
@@ -226,7 +259,7 @@ export default function App() {
     const duplicated: Quotation = {
       ...quote,
       id: 'q_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
-      quoteNo: generateQuoteNumber(db.nextQuote),
+      quoteNo: generateQuoteNumber(db.nextQuote, new Date().getFullYear(), db.settings.quotePrefix || 'QT'),
       date: new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -241,13 +274,21 @@ export default function App() {
   };
 
   const handleDeleteQuote = (id: string) => {
-    if (confirm('Are you sure you want to delete this quotation?')) {
-      setDb((prev) => ({
-        ...prev,
-        quotes: prev.quotes.filter((q) => q.id !== id),
-      }));
-      addToast('info', 'Quotation Deleted');
-    }
+    const target = db.quotes.find((q) => q.id === id);
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Quotation?',
+      message: `Are you sure you want to delete ${target?.quoteNo || 'this quotation'}? This action cannot be undone.`,
+      confirmText: 'Delete Quotation',
+      confirmVariant: 'danger',
+      onConfirm: () => {
+        setDb((prev) => ({
+          ...prev,
+          quotes: prev.quotes.filter((q) => q.id !== id),
+        }));
+        addToast('info', 'Quotation Deleted', target?.quoteNo);
+      },
+    });
   };
 
   // Customer Management
@@ -271,16 +312,24 @@ export default function App() {
 
   const handleDeleteCustomer = (id: number) => {
     if (db.customers.length <= 1) {
-      alert('You must keep at least one customer in your directory.');
+      addToast('warning', 'Action Blocked', 'You must keep at least one customer in your directory.');
       return;
     }
-    if (confirm('Delete this customer record?')) {
-      setDb((prev) => ({
-        ...prev,
-        customers: prev.customers.filter((c) => c.id !== id),
-      }));
-      addToast('info', 'Customer Deleted');
-    }
+    const cust = db.customers.find((c) => c.id === id);
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Customer?',
+      message: `Remove "${cust?.name || 'this customer'}" from your directory?`,
+      confirmText: 'Delete Customer',
+      confirmVariant: 'danger',
+      onConfirm: () => {
+        setDb((prev) => ({
+          ...prev,
+          customers: prev.customers.filter((c) => c.id !== id),
+        }));
+        addToast('info', 'Customer Deleted', cust?.name);
+      },
+    });
   };
 
   // Product Library Management
@@ -305,13 +354,21 @@ export default function App() {
   };
 
   const handleDeleteProduct = (id: string) => {
-    if (confirm('Delete this product from your library?')) {
-      setDb((prev) => ({
-        ...prev,
-        library: prev.library.filter((p) => p.id !== id),
-      }));
-      addToast('info', 'Product Removed from Library');
-    }
+    const prod = db.library.find((p) => p.id === id);
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Product?',
+      message: `Remove "${prod?.desc || 'this item'}" from your product library?`,
+      confirmText: 'Delete Product',
+      confirmVariant: 'danger',
+      onConfirm: () => {
+        setDb((prev) => ({
+          ...prev,
+          library: prev.library.filter((p) => p.id !== id),
+        }));
+        addToast('info', 'Product Removed from Library', prod?.desc);
+      },
+    });
   };
 
   const handleImportGoogleDriveProducts = (importedProducts: Product[], mode: 'replace' | 'merge') => {
@@ -364,11 +421,18 @@ export default function App() {
   };
 
   const handleResetAllData = () => {
-    if (confirm('Reset ALL sample products, customers, and quotations to fresh defaults?')) {
-      setDb(INITIAL_DATABASE);
-      setActiveQuotation(createNewEmptyQuote());
-      addToast('info', 'All Data Reset to Initial Factory Defaults');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reset All Data to Defaults?',
+      message: 'This will reset all sample products, customers, and quotations to fresh factory defaults. Any custom entries will be replaced.',
+      confirmText: 'Reset Everything',
+      confirmVariant: 'danger',
+      onConfirm: () => {
+        setDb(INITIAL_DATABASE);
+        setActiveQuotation(createNewEmptyQuote());
+        addToast('info', 'All Data Reset to Initial Factory Defaults');
+      },
+    });
   };
 
   // Trigger Print
@@ -592,6 +656,17 @@ export default function App() {
         onClose={closePrintModal}
       />
     )}
+
+    {/* Global In-App Confirmation Modal */}
+    <ConfirmModal
+      isOpen={confirmModal.isOpen}
+      title={confirmModal.title}
+      message={confirmModal.message}
+      confirmText={confirmModal.confirmText}
+      confirmVariant={confirmModal.confirmVariant}
+      onConfirm={confirmModal.onConfirm}
+      onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+    />
 
     {/* Global Toast Notifications */}
     <ToastContainer toasts={toasts} onDismiss={dismissToast} />

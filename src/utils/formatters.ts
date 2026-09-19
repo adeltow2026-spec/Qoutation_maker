@@ -12,8 +12,13 @@ export function formatMoney(amount: number | string | undefined | null, decimals
   });
 }
 
-export function generateQuoteNumber(seq: number, year: number = new Date().getFullYear()): string {
-  return `QT-${year}-${String(seq).padStart(5, '0')}`;
+export function generateQuoteNumber(
+  seq: number,
+  year: number = new Date().getFullYear(),
+  prefix: string = 'QT'
+): string {
+  const cleanPrefix = (prefix || 'QT').trim().toUpperCase();
+  return `${cleanPrefix}-${year}-${String(seq).padStart(5, '0')}`;
 }
 
 export function createBlankRow(desc = '', qty = 1, cost = 0, unit = 'pcs'): CategoryRowItem {

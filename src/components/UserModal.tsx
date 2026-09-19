@@ -36,6 +36,7 @@ export const UserModal: React.FC<UserModalProps> = ({
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [nameError, setNameError] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<UserProfile>({
@@ -50,12 +51,14 @@ export const UserModal: React.FC<UserModalProps> = ({
   if (!isOpen) return null;
 
   const startEdit = (user: UserProfile) => {
+    setNameError(false);
     setIsAddingNew(false);
     setEditingUserId(user.id);
     setFormData({ ...user });
   };
 
   const startAddNew = () => {
+    setNameError(false);
     setIsAddingNew(true);
     setEditingUserId('new');
     setFormData({
@@ -71,9 +74,10 @@ export const UserModal: React.FC<UserModalProps> = ({
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert('Please enter a user name.');
+      setNameError(true);
       return;
     }
+    setNameError(false);
 
     const initials =
       formData.avatarInitials?.trim() ||
@@ -199,10 +203,22 @@ export const UserModal: React.FC<UserModalProps> = ({
                     type="text"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (e.target.value.trim()) setNameError(false);
+                    }}
                     placeholder="e.g. Adel"
-                    className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className={`w-full px-3 py-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-1 ${
+                      nameError
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-slate-300 focus:ring-blue-500'
+                    }`}
                   />
+                  {nameError && (
+                    <p className="text-[10px] text-red-600 mt-1 font-semibold">
+                      Please enter a full name for this estimator.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -335,11 +351,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                       {users.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => {
-                            if (confirm(`Remove ${user.name} from the team?`)) {
-                              onDeleteUser(user.id);
-                            }
-                          }}
+                          onClick={() => onDeleteUser(user.id)}
                           className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
                           title="Delete member"
                         >

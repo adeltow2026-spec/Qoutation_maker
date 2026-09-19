@@ -103,6 +103,7 @@ export interface CompanySettings {
   website?: string;
   tax: number; // default VAT %
   currency: string; // default currency e.g. "AED"
+  quotePrefix?: string; // default quotation prefix e.g. "QT" or "TOW-QT"
   overheadPct: number; // default 30%
   markupPct: number; // default 40%
   completionTerms?: string;
