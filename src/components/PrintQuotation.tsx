@@ -61,6 +61,23 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
 
   const amountInWords = numberToWords(quotation.total, quotation.currency || 'AED');
 
+  const paymentTermsList = (
+    quotation.paymentTerms ||
+    settings.paymentTerms ||
+    `1. 60% Advance Payment along with signed quotation & order confirmation
+2. 30% Upon completion of factory joinery fabrication & progressive painting
+3. 10% Prior to final site delivery and handover`
+  )
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const completionSchedule = (
+    quotation.completionTerms ||
+    settings.completionTerms ||
+    '20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.'
+  ).trim();
+
   const termsList = (
     quotation.terms ||
     settings.defaultTerms ||
@@ -334,20 +351,38 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
             Payment Terms &amp; Completion Schedule
           </div>
           <div className="text-[10.5px] text-slate-800 space-y-1">
-            <p className="pl-1">
-              1. <strong>60%</strong> Advance Payment along with signed quotation &amp; order confirmation
-            </p>
-            <p className="pl-1">
-              2. <strong>30%</strong> Upon completion of factory joinery fabrication &amp; progressive painting
-            </p>
-            <p className="pl-1">
-              3. <strong>10%</strong> Prior to final site delivery and handover
-            </p>
+            {paymentTermsList.length > 0 ? (
+              paymentTermsList.map((term, idx) => {
+                const parts = term.match(/^([0-9]+[.)\-•*]\s*|\s*[•\-*]\s*)?(.*)$/);
+                const prefix = parts && parts[1] ? parts[1].trim() : `${idx + 1}.`;
+                const text = parts && parts[2] ? parts[2].trim() : term;
+                const percentMatch = text.match(/^(\d+%\s*)(.*)$/);
+                if (percentMatch) {
+                  return (
+                    <p key={idx} className="pl-1 leading-snug">
+                      <span className="font-bold text-amber-950">{prefix} </span>
+                      <strong className="text-amber-950 font-black">{percentMatch[1]}</strong>
+                      {percentMatch[2]}
+                    </p>
+                  );
+                }
+                return (
+                  <p key={idx} className="pl-1 leading-snug">
+                    <span className="font-bold text-amber-950">{prefix} </span>
+                    {text}
+                  </p>
+                );
+              })
+            ) : (
+              <p className="pl-1 leading-snug text-slate-600 italic">As mutually agreed in official contract</p>
+            )}
           </div>
-          <div className="pt-1.5 border-t border-amber-200/60 text-[10px] text-slate-800 leading-normal">
-            <span className="font-bold text-amber-950">Completion of Works:</span>{' '}
-            20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.
-          </div>
+          {completionSchedule && (
+            <div className="pt-1.5 border-t border-amber-200/60 text-[10px] text-slate-800 leading-normal">
+              <span className="font-bold text-amber-950">Completion of Works:</span>{' '}
+              {completionSchedule}
+            </div>
+          )}
         </div>
 
         {/* Bank Wire Details */}

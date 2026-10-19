@@ -48,6 +48,10 @@ import {
   Upload,
   Check,
   UserCheck,
+  Clock,
+  FileCheck2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface QuotationEditorViewProps {
@@ -81,8 +85,22 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
   onOpenProductModal,
   onPrintQuote,
 }) => {
-  const [quote, setQuote] = useState<Quotation>(initialQuotation);
+  const resolveQuoteDefaults = (sourceQuote: Quotation): Quotation => ({
+    ...sourceQuote,
+    paymentTerms:
+      sourceQuote.paymentTerms ??
+      settings.paymentTerms ??
+      '1. 60% Advance Payment along with signed quotation & order confirmation\n2. 30% Upon completion of factory joinery fabrication & progressive painting\n3. 10% Prior to final site delivery and handover',
+    completionTerms:
+      sourceQuote.completionTerms ??
+      settings.completionTerms ??
+      '20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.',
+    terms: sourceQuote.terms ?? settings.defaultTerms ?? '',
+  });
+
+  const [quote, setQuote] = useState<Quotation>(() => resolveQuoteDefaults(initialQuotation));
   const [activeTab, setActiveTab] = useState<'internal' | 'client'>('internal');
+  const [showCustomTerms, setShowCustomTerms] = useState(false);
   
   // Salesperson state
   const defaultSalesPerson =
@@ -101,7 +119,7 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
 
   // Sync when initial quote changes (e.g. loaded from list)
   useEffect(() => {
-    setQuote(initialQuotation);
+    setQuote(resolveQuoteDefaults(initialQuotation));
     const existingUser = users.find((u) => u.name === initialQuotation.salesPerson);
     if (existingUser) {
       setSalesPersonMode(existingUser.name);
@@ -1395,24 +1413,243 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
                     Preview &amp; Print Quotation
                   </button>
                 </div>
+
+                {/* Quick Commercial Notes & Terms Status in Tab 2 */}
+                <div className="pt-2 border-t border-slate-200 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between text-slate-700 font-bold">
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                      Commercial Terms on Print
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        document.getElementById('commercial-terms-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="text-[10.5px] text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                    >
+                      Edit Below ↓
+                    </button>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-lg border border-slate-200 text-[11px] text-slate-600 space-y-1">
+                    <div>
+                      <span className="font-semibold text-slate-800">Payment: </span>
+                      {quote.paymentTerms ? quote.paymentTerms.split('\n')[0] : 'Standard terms'}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-800">Timeline: </span>
+                      <span className="truncate inline-block max-w-[200px] align-bottom">
+                        {quote.completionTerms || '20 Working Days'}
+                      </span>
+                    </div>
+                    {quote.notes && (
+                      <div className="truncate text-blue-800 font-medium">
+                        <span className="font-semibold">Notes: </span>
+                        {quote.notes}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
       </section>
 
-      {/* Notes & Terms Section */}
-      <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-3">
-        <label className="block text-xs font-bold text-slate-700">
-          Commercial Notes &amp; Payment Terms (Printed on Quotation)
-        </label>
-        <textarea
-          rows={4}
-          value={quote.notes}
-          onChange={(e) => setQuote({ ...quote, notes: e.target.value })}
-          placeholder="Enter payment milestones, delivery terms, warranty, and validity conditions..."
-          className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-        />
+      {/* Commercial Terms & Notes Section */}
+      <section id="commercial-terms-section" className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-blue-50 text-blue-700 rounded-lg">
+              <FileCheck2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Commercial Notes, Payment Terms &amp; Contract Conditions
+              </h3>
+              <p className="text-xs text-slate-500">
+                All details entered here are directly printed onto the official quotation document &amp; PDF
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Reset to Company Defaults */}
+          <button
+            type="button"
+            onClick={() => {
+              setQuote((prev) => ({
+                ...prev,
+                paymentTerms:
+                  settings.paymentTerms ||
+                  '1. 60% Advance Payment along with signed quotation & order confirmation\n2. 30% Upon completion of factory joinery fabrication & progressive painting\n3. 10% Prior to final site delivery and handover',
+                completionTerms:
+                  settings.completionTerms ||
+                  '20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.',
+                notes: settings.defaultNotes || prev.notes,
+                terms: settings.defaultTerms || prev.terms,
+              }));
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg shadow-2xs transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+            Reset to Company Defaults
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Box 1: Commercial Notes & Special Conditions */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  Commercial Notes &amp; Special Project Conditions
+                </label>
+                <span className="text-[10px] text-blue-700 uppercase font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                  Printed in Commercial Box
+                </span>
+              </div>
+              <textarea
+                rows={5}
+                value={quote.notes}
+                onChange={(e) => setQuote({ ...quote, notes: e.target.value })}
+                placeholder="Enter special scope notes, warranty period, sample approval remarks, site access requirements, or client instructions..."
+                className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed font-normal"
+              />
+              <p className="text-[11px] text-slate-500">
+                Optional custom notes displayed in a prominent blue commercial highlight on the quotation.
+              </p>
+            </div>
+
+            {/* Box 2: Payment Terms & Milestones */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                  Payment Terms &amp; Milestones
+                </label>
+                <span className="text-[10px] text-amber-700 uppercase font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  Printed in Payment Box
+                </span>
+              </div>
+              <textarea
+                rows={5}
+                value={quote.paymentTerms || ''}
+                onChange={(e) => setQuote({ ...quote, paymentTerms: e.target.value })}
+                placeholder="1. 60% Advance Payment...&#10;2. 30% Fabrication...&#10;3. 10% Delivery & Handover..."
+                className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 leading-relaxed font-mono"
+              />
+              {/* Quick Presets */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] text-slate-400 font-semibold mr-1">Quick Presets:</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuote((prev) => ({
+                      ...prev,
+                      paymentTerms:
+                        '1. 60% Advance Payment along with signed quotation & order confirmation\n2. 30% Upon completion of factory joinery fabrication & progressive painting\n3. 10% Prior to final site delivery and handover',
+                    }))
+                  }
+                  className="px-2 py-0.5 text-[10.5px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 font-medium cursor-pointer"
+                >
+                  60 / 30 / 10%
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuote((prev) => ({
+                      ...prev,
+                      paymentTerms:
+                        '1. 50% Advance Payment upon contract signing & shop drawing approval\n2. 40% Progressive payment upon delivery of joinery items to project site\n3. 10% Final handover and completion certificate',
+                    }))
+                  }
+                  className="px-2 py-0.5 text-[10.5px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 font-medium cursor-pointer"
+                >
+                  50 / 40 / 10%
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuote((prev) => ({
+                      ...prev,
+                      paymentTerms:
+                        '1. 70% Advance Payment upon signed quotation confirmation\n2. 30% Prior to final site delivery and handover',
+                    }))
+                  }
+                  className="px-2 py-0.5 text-[10.5px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 font-medium cursor-pointer"
+                >
+                  70 / 30%
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuote((prev) => ({
+                      ...prev,
+                      paymentTerms: '1. 100% Advance Payment along with confirmed purchase order.',
+                    }))
+                  }
+                  className="px-2 py-0.5 text-[10.5px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 font-medium cursor-pointer"
+                >
+                  100% Advance
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Box 3: Work Completion Timeline */}
+          <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-amber-700" />
+                Completion of Works Schedule &amp; Production Timeline
+              </label>
+              <span className="text-[10px] text-amber-800 font-semibold">Printed on Bottom of Payment Box</span>
+            </div>
+            <input
+              type="text"
+              value={quote.completionTerms || ''}
+              onChange={(e) => setQuote({ ...quote, completionTerms: e.target.value })}
+              placeholder="e.g. 20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions."
+              className="w-full px-3 py-2 text-xs bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800 font-medium"
+            />
+          </div>
+
+          {/* Box 4: Standard Contract Clauses & Terms */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50">
+            <button
+              type="button"
+              onClick={() => setShowCustomTerms((prev) => !prev)}
+              className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 text-left flex items-center justify-between cursor-pointer border-b border-slate-200/60"
+            >
+              <div className="flex items-center gap-2">
+                <FileCheck2 className="w-4 h-4 text-slate-600" />
+                <span className="text-xs font-bold text-slate-800">
+                  Standard Terms &amp; Conditions (11 Contract Clauses)
+                </span>
+                <span className="text-[10px] px-2 py-0.5 bg-slate-200/80 text-slate-700 font-bold rounded">
+                  {showCustomTerms ? 'Hide Customizer' : 'Click to Customize for this Quote'}
+                </span>
+              </div>
+              {showCustomTerms ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+            </button>
+
+            {showCustomTerms && (
+              <div className="p-4 bg-white space-y-2 border-t border-slate-200">
+                <p className="text-[11px] text-slate-500">
+                  Edit or add clauses specifically for this customer/quotation. Defaults to company standard terms.
+                </p>
+                <textarea
+                  rows={8}
+                  value={quote.terms || ''}
+                  onChange={(e) => setQuote({ ...quote, terms: e.target.value })}
+                  placeholder="1. Our offer covers only the scope of works...&#10;2. This Quotation Based on your key plan..."
+                  className="w-full p-3 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed"
+                />
+              </div>
+            )}
+          </div>
+        </div>
       </section>
 
       {/* Sticky Bottom Action Bar */}

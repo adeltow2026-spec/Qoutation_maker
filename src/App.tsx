@@ -159,6 +159,12 @@ export default function App() {
       salesPerson: currentUser?.name || 'Adel',
       currency: db.settings.currency || 'AED',
       notes: db.settings.defaultNotes || '',
+      paymentTerms:
+        db.settings.paymentTerms ||
+        '1. 60% Advance Payment along with signed quotation & order confirmation\n2. 30% Upon completion of factory joinery fabrication & progressive painting\n3. 10% Prior to final site delivery and handover',
+      completionTerms:
+        db.settings.completionTerms ||
+        '20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.',
       terms: db.settings.defaultTerms || '',
       scopes: initialScopes,
       subtotal: initialTotals.subtotal,

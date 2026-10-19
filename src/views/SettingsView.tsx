@@ -522,8 +522,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 rows={3}
                 value={formData.paymentTerms || ''}
                 onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })}
-                placeholder="• 60% in advance along with order confirmation&#10;• 30% progressive painting works&#10;• 10% progressive bill prior delivery"
-                className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed"
+                placeholder="1. 60% Advance Payment along with signed quotation & order confirmation&#10;2. 30% Upon completion of factory joinery fabrication & progressive painting&#10;3. 10% Prior to final site delivery and handover"
+                className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed font-mono"
               />
             </div>
 
@@ -535,10 +535,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 rows={3}
                 value={formData.completionTerms || ''}
                 onChange={(e) => setFormData({ ...formData, completionTerms: e.target.value })}
-                placeholder="20 Working Days from the date of Advance Payment, after all measurements are taken from the site and approved Drawings."
+                placeholder="20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions."
                 className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Default Commercial Notes &amp; Special Project Conditions
+            </label>
+            <textarea
+              rows={3}
+              value={formData.defaultNotes || ''}
+              onChange={(e) => setFormData({ ...formData, defaultNotes: e.target.value })}
+              placeholder="e.g. Quotation includes supply, fabrication, and installation. Excludes civil works and MEP modifications..."
+              className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed"
+            />
+            <span className="text-[10px] text-slate-500 mt-1 block">
+              Pre-fills new quotations automatically in the Commercial Notes &amp; Special Conditions box.
+            </span>
           </div>
         </section>
 

@@ -70,6 +70,8 @@ export interface Quotation {
   salesPerson: string;
   currency: string;
   notes: string;
+  paymentTerms?: string;
+  completionTerms?: string;
   terms?: string;
   templatePhotoUrl?: string; // Reference drawing / 3D visual / key plan
   templatePhotoCaption?: string;
