@@ -25,10 +25,41 @@ export function loadDatabase(): AppDatabase {
             defaultTerms: parsed.settings?.defaultTerms || INITIAL_DATABASE.settings.defaultTerms,
           };
 
+      const isOldPaymentDuplicate = (notes?: string) =>
+        Boolean(
+          notes &&
+            (notes.includes('Payment Terms:') || notes.includes('60% in advance')) &&
+            notes.includes('Completion of Works')
+        );
+
+      if (isOldPaymentDuplicate(mergedSettings.defaultNotes)) {
+        mergedSettings.defaultNotes = INITIAL_DATABASE.settings.defaultNotes;
+      }
+
+      const sanitizedQuotes = (parsed.quotes || []).map((q: any) => ({
+        ...q,
+        notes: isOldPaymentDuplicate(q.notes) ? INITIAL_DATABASE.settings.defaultNotes : q.notes,
+        paymentTerms: q.paymentTerms || mergedSettings.paymentTerms,
+        completionTerms: q.completionTerms || mergedSettings.completionTerms,
+      }));
+
+      const sanitizedDraft = parsed.draft
+        ? {
+            ...parsed.draft,
+            notes: isOldPaymentDuplicate(parsed.draft.notes)
+              ? INITIAL_DATABASE.settings.defaultNotes
+              : parsed.draft.notes,
+            paymentTerms: parsed.draft.paymentTerms || mergedSettings.paymentTerms,
+            completionTerms: parsed.draft.completionTerms || mergedSettings.completionTerms,
+          }
+        : null;
+
       return {
         ...INITIAL_DATABASE,
         ...parsed,
         settings: mergedSettings,
+        quotes: sanitizedQuotes,
+        draft: sanitizedDraft,
         customers: parsed.customers?.length ? parsed.customers : INITIAL_DATABASE.customers,
         library: parsed.library?.length ? parsed.library : INITIAL_DATABASE.library,
         users: parsed.users?.length ? parsed.users : INITIAL_DATABASE.users,

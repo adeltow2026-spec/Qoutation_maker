@@ -54,6 +54,9 @@ import {
   ChevronUp,
 } from 'lucide-react';
 
+export const DEFAULT_COMMERCIAL_CLAUSE =
+  '• Material Availability & Market Fluctuation: Market availability is highly fluctuated; please decide promptly on existing materials.\n• Price Validity & Delay in Confirmation: If the client\'s decision or confirmation is delayed, the contractor shall adjust the price according to prevailing market rates upon contract signing, due to high market price fluctuations and supplier stock availability.\n• Design & Sample Approvals: Delays in confirming the design and approved physical samples directly cause an increase in the quotation invoice and affect delivery schedules.';
+
 interface QuotationEditorViewProps {
   initialQuotation: Quotation;
   customers: Customer[];
@@ -85,18 +88,31 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
   onOpenProductModal,
   onPrintQuote,
 }) => {
-  const resolveQuoteDefaults = (sourceQuote: Quotation): Quotation => ({
-    ...sourceQuote,
-    paymentTerms:
-      sourceQuote.paymentTerms ??
-      settings.paymentTerms ??
-      '1. 60% Advance Payment along with signed quotation & order confirmation\n2. 30% Upon completion of factory joinery fabrication & progressive painting\n3. 10% Prior to final site delivery and handover',
-    completionTerms:
-      sourceQuote.completionTerms ??
-      settings.completionTerms ??
-      '20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.',
-    terms: sourceQuote.terms ?? settings.defaultTerms ?? '',
-  });
+  const resolveQuoteDefaults = (sourceQuote: Quotation): Quotation => {
+    const hasDuplicatePaymentText = Boolean(
+      sourceQuote.notes &&
+        (sourceQuote.notes.includes('Payment Terms:') || sourceQuote.notes.includes('60% in advance')) &&
+        sourceQuote.notes.includes('Completion of Works')
+    );
+
+    const cleanNotes = hasDuplicatePaymentText
+      ? (settings.defaultNotes || DEFAULT_COMMERCIAL_CLAUSE)
+      : (sourceQuote.notes ?? settings.defaultNotes ?? DEFAULT_COMMERCIAL_CLAUSE);
+
+    return {
+      ...sourceQuote,
+      notes: cleanNotes,
+      paymentTerms:
+        sourceQuote.paymentTerms ??
+        settings.paymentTerms ??
+        '1. 60% Advance Payment along with signed quotation & order confirmation\n2. 30% Upon completion of factory joinery fabrication & progressive painting\n3. 10% Prior to final site delivery and handover',
+      completionTerms:
+        sourceQuote.completionTerms ??
+        settings.completionTerms ??
+        '20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.',
+      terms: sourceQuote.terms ?? settings.defaultTerms ?? '',
+    };
+  };
 
   const [quote, setQuote] = useState<Quotation>(() => resolveQuoteDefaults(initialQuotation));
   const [activeTab, setActiveTab] = useState<'internal' | 'client'>('internal');
@@ -1233,9 +1249,10 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Client Items Table */}
-              <div className="lg:col-span-2 overflow-x-auto">
-                <table className="w-full text-left border-collapse bg-white rounded-lg border border-slate-200">
+              {/* Client Items Table & Direct Commercial Notes in Tab 2 */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse bg-white rounded-lg border border-slate-200">
                   <thead>
                     <tr className="bg-slate-50 text-[11px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200">
                       <th className="py-3 px-3 w-10 text-center">#</th>
@@ -1349,7 +1366,62 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
                       );
                     })}
                   </tbody>
-                </table>
+                  </table>
+                </div>
+
+                {/* Direct Commercial Notes Editor in Client Quotation Tab */}
+                <div className="bg-blue-50/40 rounded-xl border border-blue-200/90 p-4 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                      Commercial Notes &amp; Special Conditions (Printed on Client Quotation)
+                    </label>
+                    <span className="text-[10px] text-blue-700 font-bold bg-white px-2 py-0.5 rounded border border-blue-200">
+                      Syncs with Print &amp; Bottom Section
+                    </span>
+                  </div>
+                  <textarea
+                    rows={4}
+                    value={quote.notes}
+                    onChange={(e) => setQuote({ ...quote, notes: e.target.value })}
+                    placeholder="Enter special scope notes, market fluctuation conditions, sample approval remarks, site access requirements, or client instructions..."
+                    className="w-full p-3 text-xs bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed text-slate-800 font-normal"
+                  />
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] text-slate-500 font-semibold">Quick Presets:</span>
+                      <button
+                        type="button"
+                        onClick={() => setQuote((prev) => ({ ...prev, notes: DEFAULT_COMMERCIAL_CLAUSE }))}
+                        className="px-2.5 py-1 text-[11px] bg-blue-600 hover:bg-blue-700 text-white rounded font-medium cursor-pointer shadow-2xs transition-colors"
+                      >
+                        Market Fluctuation &amp; Delay Clause
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setQuote((prev) => ({
+                            ...prev,
+                            notes:
+                              '• Material Availability: Market availability is highly fluctuated; please decide promptly on existing materials with supplier re-check.\n• Approval Timeline: Delay in confirming shop drawings and finish samples will cause price adjustments according to current supplier rates.',
+                          }))
+                        }
+                        className="px-2 py-1 text-[11px] bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-300 font-medium cursor-pointer transition-colors"
+                      >
+                        Material &amp; Sample Notice
+                      </button>
+                    </div>
+                    {quote.notes && (
+                      <button
+                        type="button"
+                        onClick={() => setQuote((prev) => ({ ...prev, notes: '' }))}
+                        className="text-[11px] text-red-600 hover:text-red-800 font-medium cursor-pointer"
+                      >
+                        Clear Notes
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Financial Calculation Summary Card */}
@@ -1502,22 +1574,77 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                   Commercial Notes &amp; Special Project Conditions
                 </label>
                 <span className="text-[10px] text-blue-700 uppercase font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                   Printed in Commercial Box
                 </span>
               </div>
+
+              {/* Warning banner if duplicate payment text is detected in notes */}
+              {quote.notes &&
+                (quote.notes.includes('Payment Terms:') || quote.notes.includes('60% in advance')) &&
+                quote.notes.includes('Completion of Works') && (
+                  <div className="p-2.5 bg-amber-50 border border-amber-300 rounded-lg flex items-center justify-between text-xs text-amber-900 gap-2">
+                    <span>
+                      <strong>Notice:</strong> Old duplicate payment terms found in this notes field.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setQuote((prev) => ({ ...prev, notes: DEFAULT_COMMERCIAL_CLAUSE }))}
+                      className="px-2.5 py-1 text-[11px] bg-amber-600 hover:bg-amber-700 text-white font-bold rounded cursor-pointer whitespace-nowrap shadow-2xs"
+                    >
+                      Replace with Market Fluctuation Clause
+                    </button>
+                  </div>
+                )}
+
               <textarea
                 rows={5}
                 value={quote.notes}
                 onChange={(e) => setQuote({ ...quote, notes: e.target.value })}
-                placeholder="Enter special scope notes, warranty period, sample approval remarks, site access requirements, or client instructions..."
+                placeholder="Enter special scope notes, market fluctuation conditions, sample approval remarks, site access requirements, or client instructions..."
                 className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed font-normal"
               />
+
+              {/* Quick Presets for Commercial Notes */}
+              <div className="flex flex-wrap items-center justify-between gap-1.5 pt-0.5">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] text-slate-400 font-semibold mr-0.5">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuote((prev) => ({ ...prev, notes: DEFAULT_COMMERCIAL_CLAUSE }))}
+                    className="px-2.5 py-0.5 text-[10.5px] bg-blue-50 hover:bg-blue-100 text-blue-800 rounded border border-blue-300 font-semibold cursor-pointer shadow-2xs transition-colors"
+                  >
+                    Market Fluctuation &amp; Delay Clause
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuote((prev) => ({
+                        ...prev,
+                        notes:
+                          '• Material Availability: Market availability is highly fluctuated; please decide promptly on existing materials with supplier re-check.\n• Approval Timeline: Delay in confirming shop drawings and finish samples will cause price adjustments according to current supplier rates.',
+                      }))
+                    }
+                    className="px-2 py-0.5 text-[10.5px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 font-medium cursor-pointer transition-colors"
+                  >
+                    Material &amp; Sample Notice
+                  </button>
+                </div>
+                {quote.notes && (
+                  <button
+                    type="button"
+                    onClick={() => setQuote((prev) => ({ ...prev, notes: '' }))}
+                    className="text-[10.5px] text-red-600 hover:text-red-800 font-medium cursor-pointer"
+                  >
+                    Clear Notes
+                  </button>
+                )}
+              </div>
               <p className="text-[11px] text-slate-500">
-                Optional custom notes displayed in a prominent blue commercial highlight on the quotation.
+                Custom commercial notes are highlighted in an elegant blue box on official quotation prints and PDFs.
               </p>
             </div>
 

@@ -332,12 +332,32 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
 
       {/* Custom Commercial Notes (If entered by estimator) */}
       {quotation.notes && quotation.notes.trim() && (
-        <div className="mb-6 p-4 rounded-xl bg-blue-50/50 border border-blue-200/80 text-xs space-y-1.5 print-avoid-break">
+        <div className="mb-6 p-4 rounded-xl bg-blue-50/60 border border-blue-200/90 text-xs space-y-2 print-avoid-break">
           <div className="font-bold text-blue-950 uppercase text-[10.5px] tracking-wider flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-blue-600 inline-block"></span>
             <span>Commercial Notes &amp; Special Project Conditions</span>
           </div>
-          <div className="text-[11px] text-slate-800 leading-relaxed whitespace-pre-line">
-            {quotation.notes}
+          <div className="text-[11px] text-slate-800 leading-relaxed space-y-1.5">
+            {quotation.notes.split('\n').map((line, idx) => {
+              const trimmed = line.trim();
+              if (!trimmed) return <div key={idx} className="h-1" />;
+              const colonIdx = trimmed.indexOf(':');
+              if ((trimmed.startsWith('•') || trimmed.startsWith('-') || /^\d+[.)]/.test(trimmed)) && colonIdx > 1) {
+                const title = trimmed.substring(0, colonIdx + 1);
+                const rest = trimmed.substring(colonIdx + 1);
+                return (
+                  <p key={idx} className="pl-1 leading-snug">
+                    <strong className="text-blue-950 font-bold">{title}</strong>
+                    <span>{rest}</span>
+                  </p>
+                );
+              }
+              return (
+                <p key={idx} className="pl-1 leading-snug">
+                  {trimmed}
+                </p>
+              );
+            })}
           </div>
         </div>
       )}

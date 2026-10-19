@@ -195,7 +195,7 @@ export const INITIAL_DATABASE: AppDatabase = {
       accountNumber: '9234574205',
     },
     defaultNotes:
-      '• Payment Terms:\n  - 60% in advance along with the order confirmation\n  - 30% progressive painting works\n  - 10% progressive bill prior delivery\n• Completion of Works: 20 Working Days from the date of Advance Payment, after all measurements are taken from the site and approved Drawings.',
+      '• Material Availability & Market Fluctuation: Market availability is highly fluctuated; please decide promptly on existing materials.\n• Price Validity & Delay in Confirmation: If the client\'s decision or confirmation is delayed, the contractor shall adjust the price according to prevailing market rates upon contract signing, due to high market price fluctuations and supplier stock availability.\n• Design & Sample Approvals: Delays in confirming the design and approved physical samples directly cause an increase in the quotation invoice and affect delivery schedules.',
     defaultTerms: `1. Our offer covers only the scope of works mentioned in the quotation based on the above Bill of Quantities and Any Additional items required and not mentioned above will be considered as a variation order.
 2. This Quotation Based on your key plan, If any Different on site actual dimension it will Affect price.
 3. This Quotation Based on your design, If any Different on the design will Affect price.
