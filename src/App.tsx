@@ -6,6 +6,7 @@ import {
   Product,
   CompanySettings,
   UserProfile,
+  PrintAuditLog,
 } from './types';
 import { loadDatabase, saveDatabase, exportDatabaseBackup } from './utils/storage';
 import {
@@ -19,6 +20,7 @@ import { ToastContainer, ToastMessage } from './components/Toast';
 import { CustomerModal } from './components/CustomerModal';
 import { ProductModal } from './components/ProductModal';
 import { UserModal } from './components/UserModal';
+import { LoginScreen } from './components/LoginScreen';
 import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
 import { PrintPreviewModal } from './components/PrintPreviewModal';
 import { ConfirmModal } from './components/ConfirmModal';
@@ -67,6 +69,15 @@ export default function App() {
     onConfirm: () => {},
   });
 
+  // User Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      return Boolean(localStorage.getItem('quotepro_authenticated_user_id'));
+    } catch {
+      return true;
+    }
+  });
+
   // Active user profile
   const currentUser: UserProfile =
     db.users?.find((u) => u.id === db.currentUserId) ||
@@ -76,7 +87,33 @@ export default function App() {
       role: 'Managing Estimator',
       email: 'adel.tow.2026@gmail.com',
       avatarInitials: 'AD',
+      password: 'Adel@2026',
+      isAdmin: true,
     };
+
+  const handleLoginSuccess = (user: UserProfile) => {
+    try {
+      localStorage.setItem('quotepro_authenticated_user_id', user.id);
+    } catch {}
+    setDb((prev) => ({ ...prev, currentUserId: user.id }));
+    setIsAuthenticated(true);
+    addToast('success', 'Authentication Successful', `Welcome, ${user.name}`);
+  };
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('quotepro_authenticated_user_id');
+    } catch {}
+    setIsAuthenticated(false);
+    addToast('info', 'Logged Out', 'You have been signed out safely.');
+  };
+
+  const handleRecordPrintLog = (log: PrintAuditLog) => {
+    setDb((prev) => ({
+      ...prev,
+      printLogs: [log, ...(prev.printLogs || [])],
+    }));
+  };
 
   const handleSelectUser = (userId: string) => {
     setDb((prev) => ({ ...prev, currentUserId: userId }));
@@ -454,6 +491,19 @@ export default function App() {
     ? db.customers.find((c) => c.id === printingQuote.customerId)
     : undefined;
 
+  if (!isAuthenticated) {
+    return (
+      <>
+        <LoginScreen
+          users={db.users || []}
+          settings={db.settings}
+          onLoginSuccess={handleLoginSuccess}
+        />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </>
+    );
+  }
+
   return (
     <>
       <div
@@ -646,10 +696,14 @@ export default function App() {
         isOpen={userModalOpen}
         onClose={() => setUserModalOpen(false)}
         users={db.users || []}
-        currentUserId={db.currentUserId || 'usr_adel'}
+        currentUserId={db.currentUserId || 'u-1'}
+        settings={db.settings}
+        printLogs={db.printLogs || []}
         onSelectUser={handleSelectUser}
         onSaveUser={handleSaveUser}
         onDeleteUser={handleDeleteUser}
+        onSaveSettings={handleSaveSettings}
+        onLogout={handleLogout}
       />
     </div>
 
@@ -659,6 +713,8 @@ export default function App() {
         quotation={printingQuote}
         customer={targetCustomerForPrint}
         settings={db.settings}
+        currentUser={currentUser}
+        onRecordPrintLog={handleRecordPrintLog}
         onClose={closePrintModal}
       />
     )}

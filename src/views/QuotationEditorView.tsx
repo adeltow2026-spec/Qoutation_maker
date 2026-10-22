@@ -26,6 +26,7 @@ import {
 } from '../utils/formatters';
 import { ProductPickerModal } from '../components/ProductPickerModal';
 import { FormattedDescription } from '../components/FormattedDescription';
+import { InternalCostingSpreadsheet } from '../components/InternalCostingSpreadsheet';
 import {
   Plus,
   Trash2,
@@ -186,8 +187,14 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
     });
   };
 
-  const overheadPct = settings.overheadPct ?? 30;
-  const markupPct = settings.markupPct ?? 40;
+  const [overheadPct, setOverheadPct] = useState<number>(settings.overheadPct ?? 30);
+  const [markupPct, setMarkupPct] = useState<number>(settings.markupPct ?? 40);
+  const [expandedSpecs, setExpandedSpecs] = useState<Record<number, boolean>>({});
+
+  const toggleScopeSpecs = (idx: number) => {
+    setExpandedSpecs((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
   const vatPct = quote.vatPct ?? settings.tax ?? 5;
 
   // Calculate live financial summary
@@ -462,10 +469,10 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
       : 'Category';
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-2.5 sm:p-5 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
       {/* Quotation Header & Master Details Card */}
-      <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-5">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+      <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-3.5 sm:p-5 md:p-6 space-y-4 sm:space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 sm:pb-4 gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-bold">
               QT
@@ -672,568 +679,65 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
       {/* Main Costing Workspace Tabs */}
       <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-200 bg-slate-50/70 px-6 pt-3">
+        <div className="flex border-b border-slate-200 bg-slate-50/70 px-2 sm:px-6 pt-2 sm:pt-3 overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setActiveTab('internal')}
-            className={`flex items-center gap-2 px-5 py-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 text-xs font-bold border-b-2 transition-all cursor-pointer shrink-0 ${
               activeTab === 'internal'
                 ? 'border-blue-600 text-blue-700 bg-white rounded-t-lg shadow-xs'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-extrabold">
+            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-extrabold shrink-0">
               1
             </span>
-            Internal Costing &amp; Estimation (Sales &amp; Production)
+            <span className="hidden sm:inline">Internal Costing &amp; Estimation (Sales &amp; Production)</span>
+            <span className="sm:hidden">1. Scope Costing</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('client')}
-            className={`flex items-center gap-2 px-5 py-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 text-xs font-bold border-b-2 transition-all cursor-pointer shrink-0 ${
               activeTab === 'client'
                 ? 'border-blue-600 text-blue-700 bg-white rounded-t-lg shadow-xs'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-extrabold">
+            <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-extrabold shrink-0">
               2
             </span>
-            Client Quotation (Final Review &amp; Client Pricing)
+            <span className="hidden sm:inline">Client Quotation (Final Review &amp; Client Pricing)</span>
+            <span className="sm:hidden">2. Client Quote</span>
           </button>
         </div>
 
-        {/* Tab 1: Internal Costing & Estimation */}
+        {/* Tab 1: Internal Costing & Estimation (Option 1: Classic Hierarchical WBS Excel Sheet) */}
         {activeTab === 'internal' && (
-          <div className="p-6 space-y-6">
-            <div className="bg-blue-50/60 border border-blue-200/80 rounded-lg p-3.5 flex items-start gap-3 text-xs text-blue-900">
-              <Layers className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold">
-                  Two-Click Product Library Integration &amp; Cost Auto-Calculation:
-                </p>
-                <p className="text-[11px] text-blue-700/90 mt-0.5">
-                  Click <span className="font-bold underline">“＋ Add from Product Library”</span>{' '}
-                  inside any category to pick items from your catalog with standard unit costs auto-filled.
-                  Direct costs automatically compound with <strong>{overheadPct}% Overheads</strong> and{' '}
-                  <strong>{markupPct}% Markup</strong>.
-                </p>
-              </div>
-            </div>
-
-            {/* List of Scope Items */}
-            <div className="space-y-6">
-              {quote.scopes.map((scope, scopeIndex) => {
-                const directCost = calculateScopeDirectCost(scope);
-                const overheadCost = calculateScopeOverhead(scope, overheadPct);
-                const productionCost = calculateScopeProductionCost(scope, overheadPct);
-                const suggestedPrice = calculateScopeSuggestedPrice(scope, overheadPct, markupPct);
-                const finalUnitPrice = getScopeFinalUnitPrice(scope, overheadPct, markupPct);
-                const scopeTotal = calculateScopeLineTotal(scope, overheadPct, markupPct);
-
-                return (
-                  <div
-                    key={scope.id}
-                    className="bg-slate-50/50 rounded-xl border border-slate-300 p-5 space-y-4 shadow-xs"
-                  >
-                    {/* Scope Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-lg border border-slate-200">
-                      <div className="flex-1 flex items-center gap-3">
-                        <span className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-xs font-bold font-mono">
-                          {scopeIndex + 1}
-                        </span>
-                        <input
-                          type="text"
-                          value={scope.name}
-                          onChange={(e) =>
-                            handleUpdateScopeField(scopeIndex, 'name', e.target.value)
-                          }
-                          placeholder="Scope Title (e.g. Aluminium Windows Package)"
-                          className="font-bold text-sm text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-blue-600 focus:outline-none px-1 py-0.5 flex-1 min-w-[200px]"
-                        />
-                      </div>
-
-                      <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
-                          <span className="font-semibold">Scope Qty:</span>
-                          <input
-                            type="number"
-                            dir="ltr"
-                            min="0"
-                            step="0.1"
-                            value={scope.qty}
-                            onChange={(e) =>
-                              handleUpdateScopeField(
-                                scopeIndex,
-                                'qty',
-                                Math.max(0, parseFloat(e.target.value) || 0)
-                              )
-                            }
-                            className="w-16 px-1.5 py-0.5 text-xs font-mono font-bold text-left bg-white border border-slate-300 rounded"
-                          />
-                        </div>
-
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
-                          <span className="font-semibold">Unit:</span>
-                          <input
-                            type="text"
-                            value={scope.unit}
-                            onChange={(e) =>
-                              handleUpdateScopeField(scopeIndex, 'unit', e.target.value)
-                            }
-                            placeholder="Lot / m²"
-                            className="w-16 px-1.5 py-0.5 text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded"
-                          />
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteScope(scopeIndex)}
-                          title="Delete Scope"
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Scope Description & Specifications Panel (Reflected in Quotation) */}
-                    <div className="bg-white rounded-lg border border-slate-200 p-3.5 space-y-2.5 shadow-2xs">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                          <AlignLeft className="w-4 h-4 text-blue-600" />
-                          <span>Scope Description / Technical Specifications</span>
-                        </label>
-                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                          Printed on Client Quotation
-                        </span>
-                      </div>
-
-                      <textarea
-                        rows={3}
-                        value={scope.description || ''}
-                        onChange={(e) =>
-                          handleUpdateScopeField(scopeIndex, 'description', e.target.value)
-                        }
-                        placeholder="Type your custom item description, construction details, dimensions, finishes, etc..."
-                        className="w-full p-2.5 text-xs text-slate-800 bg-slate-50/70 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed placeholder:text-slate-400"
-                      />
-
-                      {/* Always included compliance standard */}
-                      <div className="flex items-start gap-1.5 text-[11px] text-slate-600 bg-slate-50 px-2.5 py-1.5 rounded-md border border-slate-200/70">
-                        <span className="font-semibold text-slate-700 shrink-0">Included on Quotation:</span>
-                        <span className="italic text-slate-600">
-                          All work executed as per approved 2D shop drawings, specifications, and approved physical control samples.
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Per-Scope Reference Visual / Photo Section */}
-                    <div className="bg-white rounded-lg border border-slate-200 p-3.5 space-y-3 shadow-2xs">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="p-1 bg-amber-50 text-amber-800 rounded">
-                            <ImageIcon className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <span className="text-xs font-bold text-slate-800">
-                              Scope Reference Photo &amp; Detail Drawing
-                            </span>
-                            <span className="text-[10px] text-slate-500 ml-2 hidden sm:inline">
-                              (Specific to {scope.name || `Scope ${scopeIndex + 1}`} — printed on client proposal)
-                            </span>
-                          </div>
-                        </div>
-
-                        {scope.photoUrl && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveScopePhoto(scopeIndex)}
-                            className="text-[11px] text-red-600 hover:text-red-700 flex items-center gap-1 font-semibold cursor-pointer bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded border border-red-200 transition-colors"
-                          >
-                            <Trash2 className="w-3 h-3" /> Remove Photo
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start bg-slate-50/70 p-3 rounded-lg border border-slate-200/80">
-                        {/* Scope Photo Box */}
-                        <div className="sm:col-span-1">
-                          {scope.photoUrl ? (
-                            <div className="relative group rounded-lg overflow-hidden border border-slate-300 bg-white h-32 flex items-center justify-center shadow-xs">
-                              <img
-                                src={scope.photoUrl}
-                                alt={scope.photoCaption || `${scope.name} Reference Visual`}
-                                className="max-h-full max-w-full object-contain p-1"
-                                referrerPolicy="no-referrer"
-                              />
-                              <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
-                                <label className="px-2 py-1 bg-white text-slate-900 rounded text-[11px] font-bold hover:bg-slate-100 shadow-md cursor-pointer">
-                                  Change
-                                  <input
-                                    type="file"
-                                    onChange={(e) => handleScopePhotoUpload(scopeIndex, e)}
-                                    accept="image/png,image/jpeg,image/webp"
-                                    className="hidden"
-                                  />
-                                </label>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveScopePhoto(scopeIndex)}
-                                  className="px-2 py-1 bg-red-600 text-white rounded text-[11px] font-bold hover:bg-red-700 shadow-md cursor-pointer"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <label className="border-2 border-dashed border-slate-300 hover:border-blue-500 bg-white hover:bg-blue-50/50 rounded-lg h-32 flex flex-col items-center justify-center p-2.5 text-center cursor-pointer transition-colors group">
-                              <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-blue-100 flex items-center justify-center text-slate-500 group-hover:text-blue-600 transition-colors mb-1">
-                                <Upload className="w-4 h-4" />
-                              </div>
-                              <span className="text-[11px] font-bold text-slate-700 group-hover:text-blue-700">
-                                Attach Scope Photo
-                              </span>
-                              <span className="text-[9px] text-slate-400 mt-0.5">
-                                3D render / CAD elevation / site photo
-                              </span>
-                              <input
-                                type="file"
-                                onChange={(e) => handleScopePhotoUpload(scopeIndex, e)}
-                                accept="image/png,image/jpeg,image/webp"
-                                className="hidden"
-                              />
-                            </label>
-                          )}
-                        </div>
-
-                        {/* Caption & Scope Reference Note */}
-                        <div className="sm:col-span-2 space-y-2">
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                              Drawing Caption / Specification Reference Note
-                            </label>
-                            <input
-                              type="text"
-                              value={scope.photoCaption || ''}
-                              onChange={(e) =>
-                                handleUpdateScopeField(scopeIndex, 'photoCaption', e.target.value)
-                              }
-                              placeholder="e.g. Approved 3D concept render / Architectural submittal drawing DWG-01"
-                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                            />
-                            <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
-                              This photo is attached directly to <strong>{scope.name || `Scope ${scopeIndex + 1}`}</strong> and will print in its line item section on the client quotation letterhead.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Scope Categories */}
-                    <div className="space-y-4">
-                      {scope.categories.map((cat, catIndex) => {
-                        const theme = CATEGORY_THEMES[catIndex % CATEGORY_THEMES.length];
-                        const catTotal = calculateCategoryTotal(cat);
-
-                        return (
-                          <div
-                            key={cat.id}
-                            className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-xs"
-                          >
-                            {/* Category Header Bar */}
-                            <div
-                              className={`px-4 py-2.5 border-b border-slate-200 flex items-center justify-between ${theme.bg}`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Tag className="w-3.5 h-3.5 text-slate-500" />
-                                <input
-                                  type="text"
-                                  value={cat.name}
-                                  onChange={(e) =>
-                                    handleUpdateCategoryName(scopeIndex, catIndex, e.target.value)
-                                  }
-                                  placeholder="Category Name"
-                                  className="font-bold text-xs text-slate-900 bg-transparent border-b border-transparent hover:border-slate-400 focus:border-blue-600 focus:bg-white px-1.5 py-0.5 rounded transition-colors"
-                                />
-                              </div>
-
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs font-semibold text-slate-600">
-                                  Category Subtotal:{' '}
-                                  <span className="font-mono font-bold text-slate-900">
-                                    {formatMoney(catTotal)} {quote.currency}
-                                  </span>
-                                </span>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteCategory(scopeIndex, catIndex)}
-                                  className="text-slate-400 hover:text-red-600 p-1 rounded"
-                                  title="Delete Category"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Category Items Table */}
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-left border-collapse">
-                                <thead>
-                                  <tr className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                                    <th className="py-2 px-3 w-10 text-center">#</th>
-                                    <th className="py-2 px-3">Item Description</th>
-                                    <th className="py-2 px-3 w-28">Quick Catalog Picker</th>
-                                    <th className="py-2 px-3 w-20">Unit</th>
-                                    <th className="py-2 px-3 w-24">Qty</th>
-                                    <th className="py-2 px-3 w-28 text-left">
-                                      Unit Cost ({quote.currency})
-                                    </th>
-                                    <th className="py-2 px-3 w-28 text-right">Total Cost</th>
-                                    <th className="py-2 px-3 w-10 text-center"></th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 text-xs">
-                                  {cat.rows.map((row, rowIndex) => {
-                                    const rowTotal =
-                                      Math.max(0, Number(row.qty) || 0) *
-                                      Math.max(0, Number(row.cost) || 0);
-
-                                    return (
-                                      <tr
-                                        key={row.id}
-                                        className="hover:bg-slate-50/60 transition-colors"
-                                      >
-                                        <td className="py-2 px-3 text-center text-slate-400 font-mono">
-                                          {rowIndex + 1}
-                                        </td>
-
-                                        {/* Description */}
-                                        <td className="py-2 px-3">
-                                          <input
-                                            type="text"
-                                            value={row.desc}
-                                            onChange={(e) =>
-                                              handleUpdateRowField(
-                                                scopeIndex,
-                                                catIndex,
-                                                rowIndex,
-                                                'desc',
-                                                e.target.value
-                                              )
-                                            }
-                                            placeholder="Item description or specification..."
-                                            className="w-full px-2 py-1 bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-600 focus:bg-white rounded text-xs text-slate-900"
-                                          />
-                                        </td>
-
-                                        {/* Catalog Quick Dropdown */}
-                                        <td className="py-2 px-3">
-                                          <select
-                                            value={row.productId || ''}
-                                            onChange={(e) =>
-                                              handleSelectProductForRow(
-                                                scopeIndex,
-                                                catIndex,
-                                                rowIndex,
-                                                e.target.value
-                                              )
-                                            }
-                                            className="w-full px-2 py-1 text-[11px] bg-slate-100/80 hover:bg-white border border-slate-200 rounded text-slate-700 cursor-pointer"
-                                          >
-                                            <option value="">Choose item...</option>
-                                            {products.map((p) => (
-                                              <option key={p.id} value={p.id}>
-                                                {p.code} — {p.desc.slice(0, 30)}... ({p.price}{' '}
-                                                {quote.currency})
-                                              </option>
-                                            ))}
-                                          </select>
-                                        </td>
-
-                                        {/* Unit */}
-                                        <td className="py-2 px-3">
-                                          <input
-                                            type="text"
-                                            value={row.unit || 'pcs'}
-                                            onChange={(e) =>
-                                              handleUpdateRowField(
-                                                scopeIndex,
-                                                catIndex,
-                                                rowIndex,
-                                                'unit',
-                                                e.target.value
-                                              )
-                                            }
-                                            className="w-16 px-1.5 py-1 text-xs text-slate-700 bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-600 focus:bg-white rounded"
-                                          />
-                                        </td>
-
-                                        {/* Quantity */}
-                                        <td className="py-2 px-3">
-                                          <input
-                                            type="number"
-                                            dir="ltr"
-                                            min="0"
-                                            step="0.1"
-                                            value={row.qty}
-                                            onChange={(e) =>
-                                              handleUpdateRowField(
-                                                scopeIndex,
-                                                catIndex,
-                                                rowIndex,
-                                                'qty',
-                                                Math.max(0, parseFloat(e.target.value) || 0)
-                                              )
-                                            }
-                                            className="w-20 px-2 py-1 text-xs font-mono text-left bg-white border border-slate-300 rounded focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                          />
-                                        </td>
-
-                                        {/* Unit Cost (Auto-filled or manual) */}
-                                        <td className="py-2 px-3">
-                                          <input
-                                            type="number"
-                                            dir="ltr"
-                                            min="0"
-                                            step="0.01"
-                                            value={row.cost}
-                                            onChange={(e) =>
-                                              handleUpdateRowField(
-                                                scopeIndex,
-                                                catIndex,
-                                                rowIndex,
-                                                'cost',
-                                                Math.max(0, parseFloat(e.target.value) || 0)
-                                              )
-                                            }
-                                            className="w-24 px-2 py-1 text-xs font-mono font-semibold text-left text-blue-900 bg-white border border-slate-300 rounded focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                          />
-                                        </td>
-
-                                        {/* Total */}
-                                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">
-                                          {formatMoney(rowTotal)}
-                                        </td>
-
-                                        {/* Delete */}
-                                        <td className="py-2 px-3 text-center">
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              handleDeleteRow(scopeIndex, catIndex, rowIndex)
-                                            }
-                                            className="text-slate-300 hover:text-red-600 transition-colors p-1"
-                                            title="Delete Row"
-                                          >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                          </button>
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-
-                            {/* Category Action Buttons */}
-                            <div className="p-3 bg-slate-50/50 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                              {/* Prominent Button to Add from Product Library */}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleOpenPickerForCategory(scopeIndex, catIndex)
-                                }
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Package className="w-3.5 h-3.5" />
-                                ＋ Add from Product Library
-                              </button>
-
-                              {/* Button to Add Custom Blank Row */}
-                              <button
-                                type="button"
-                                onClick={() => handleAddBlankRow(scopeIndex, catIndex)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                                ＋ Add Custom Row
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Add Category to this Scope */}
-                    <div className="pt-1">
-                      <button
-                        type="button"
-                        onClick={() => handleAddCategory(scopeIndex)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-xs transition-colors"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        ＋ Add Cost Category
-                      </button>
-                    </div>
-
-                    {/* Scope Cost Breakdown & Margin Formula Bar (Direct Cost merged with +30% Over Head) */}
-                    <div className="bg-white rounded-lg border border-slate-200 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                      <div className="space-y-0.5">
-                        <div className="text-slate-600 font-semibold">
-                          1. Direct Cost + {overheadPct}% Over Head:
-                        </div>
-                        <div className="font-mono font-black text-slate-900 text-sm">
-                          {formatMoney(productionCost)} {quote.currency}
-                        </div>
-                        <div className="text-[10px] text-slate-500 font-medium">
-                          Direct: {formatMoney(directCost)} + {overheadPct}% OH ({formatMoney(overheadCost)} {quote.currency})
-                        </div>
-                      </div>
-
-                      <div className="space-y-0.5">
-                        <div className="text-slate-600 font-semibold">
-                          2. Production Unit Cost:
-                        </div>
-                        <div className="font-mono font-bold text-slate-900 text-sm">
-                          {formatMoney(scope.qty > 0 ? productionCost / scope.qty : productionCost)} {quote.currency} / {scope.unit}
-                        </div>
-                        <div className="text-[10px] text-slate-500">
-                          Consolidated base cost per unit
-                        </div>
-                      </div>
-
-                      <div className="space-y-0.5 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                        <div className="text-emerald-800 font-bold">
-                          Suggested Client Price (+{markupPct}% Markup):
-                        </div>
-                        <div className="font-mono font-black text-emerald-700 text-sm">
-                          {formatMoney(suggestedPrice)} {quote.currency}
-                        </div>
-                        <div className="text-[10px] text-emerald-600 font-mono">
-                          Rate: {formatMoney(scope.qty > 0 ? suggestedPrice / scope.qty : suggestedPrice)} / {scope.unit}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Add New Scope Button */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleAddScope}
-                className="w-full py-3.5 border-2 border-dashed border-blue-300 hover:border-blue-500 bg-blue-50/40 hover:bg-blue-50 text-blue-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                ＋ Add New Scope Item
-              </button>
-            </div>
-          </div>
+          <InternalCostingSpreadsheet
+            quote={quote}
+            products={products}
+            overheadPct={overheadPct}
+            setOverheadPct={setOverheadPct}
+            markupPct={markupPct}
+            setMarkupPct={setMarkupPct}
+            expandedSpecs={expandedSpecs}
+            toggleScopeSpecs={toggleScopeSpecs}
+            onOpenPickerForCategory={handleOpenPickerForCategory}
+            onAddScope={handleAddScope}
+            onDeleteScope={handleDeleteScope}
+            onUpdateScopeField={handleUpdateScopeField}
+            onScopePhotoUpload={handleScopePhotoUpload}
+            onRemoveScopePhoto={handleRemoveScopePhoto}
+            onAddCategory={handleAddCategory}
+            onDeleteCategory={handleDeleteCategory}
+            onUpdateCategoryName={handleUpdateCategoryName}
+            onAddBlankRow={handleAddBlankRow}
+            onDeleteRow={handleDeleteRow}
+            onUpdateRowField={handleUpdateRowField}
+            onSelectProductForRow={handleSelectProductForRow}
+          />
         )}
 
         {/* Tab 2: Client Quotation (Consolidated Line Items & Pricing) */}

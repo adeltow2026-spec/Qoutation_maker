@@ -207,6 +207,15 @@ export const INITIAL_DATABASE: AppDatabase = {
 9. Charging for delivery Sample and Pickup Sample (200 AED).
 10. The accountability of the approval laminate sheet is on the client. Sample has to be confirmed for this work.
 11. Please read the contract carefully.`,
+    emailAlerts: {
+      recipientEmail: 'adel.tow.2026@gmail.com',
+      enableAlerts: true,
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smtpSecure: false,
+    },
   },
   users: [
     {
@@ -216,6 +225,8 @@ export const INITIAL_DATABASE: AppDatabase = {
       phone: '+971 50 123 4567',
       role: 'Managing Estimator / Director',
       avatarInitials: 'AD',
+      password: 'Adel@2026',
+      isAdmin: true,
     },
     {
       id: 'u-2',
@@ -224,6 +235,8 @@ export const INITIAL_DATABASE: AppDatabase = {
       phone: '+971 2 550 1234',
       role: 'Commercial Estimating Team',
       avatarInitials: 'TOW',
+      password: 'Tow@123',
+      isAdmin: false,
     },
     {
       id: 'u-3',
@@ -232,9 +245,12 @@ export const INITIAL_DATABASE: AppDatabase = {
       phone: '+971 2 550 1234',
       role: 'Joinery & Fit-out Specialist',
       avatarInitials: 'PE',
+      password: 'Tow@123',
+      isAdmin: false,
     },
   ],
   currentUserId: 'u-1',
   nextQuote: 45,
-  nextCustomer: 5
+  nextCustomer: 5,
+  printLogs: [],
 };

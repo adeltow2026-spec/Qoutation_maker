@@ -56,6 +56,35 @@ export interface UserProfile {
   phone?: string;
   role: string;
   avatarInitials?: string;
+  password?: string;
+  isAdmin?: boolean;
+  lastLogin?: string;
+}
+
+export interface PrintAuditLog {
+  id: string;
+  timestamp: string;
+  quoteNo: string;
+  customerName: string;
+  project: string;
+  totalAmount: number;
+  currency: string;
+  printedByUserId: string;
+  printedByUserName: string;
+  printedByUserEmail: string;
+  actionType: 'print' | 'pdf_download';
+  emailNotificationSent: boolean;
+  emailNotificationError?: string;
+}
+
+export interface EmailSettings {
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  smtpSecure?: boolean;
+  recipientEmail?: string; // defaults to adel.tow.2026@gmail.com
+  enableAlerts?: boolean;
 }
 
 export interface Quotation {
@@ -113,6 +142,7 @@ export interface CompanySettings {
   bankDetails?: BankDetails;
   defaultNotes?: string;
   defaultTerms?: string;
+  emailAlerts?: EmailSettings;
 }
 
 export interface AppDatabase {
@@ -125,6 +155,8 @@ export interface AppDatabase {
   currentUserId: string;
   nextQuote: number;
   nextCustomer: number;
+  printLogs?: PrintAuditLog[];
 }
 
 declare module 'html2pdf.js';
+

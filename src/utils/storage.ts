@@ -54,16 +54,32 @@ export function loadDatabase(): AppDatabase {
           }
         : null;
 
+      const mergedUsers = (parsed.users && parsed.users.length ? parsed.users : INITIAL_DATABASE.users).map((u: any) => {
+        const seedMatch = INITIAL_DATABASE.users.find((s) => s.id === u.id || s.email === u.email);
+        return {
+          ...u,
+          password: u.password || (seedMatch?.password || (u.name.toLowerCase().includes('adel') ? 'Adel@2026' : 'Tow@123')),
+          isAdmin: u.isAdmin !== undefined ? u.isAdmin : (seedMatch?.isAdmin ?? u.name.toLowerCase().includes('adel')),
+        };
+      });
+
       return {
         ...INITIAL_DATABASE,
         ...parsed,
-        settings: mergedSettings,
+        settings: {
+          ...mergedSettings,
+          emailAlerts: {
+            ...INITIAL_DATABASE.settings.emailAlerts,
+            ...(parsed.settings?.emailAlerts || {}),
+          },
+        },
         quotes: sanitizedQuotes,
         draft: sanitizedDraft,
         customers: parsed.customers?.length ? parsed.customers : INITIAL_DATABASE.customers,
         library: parsed.library?.length ? parsed.library : INITIAL_DATABASE.library,
-        users: parsed.users?.length ? parsed.users : INITIAL_DATABASE.users,
+        users: mergedUsers,
         currentUserId: parsed.currentUserId || INITIAL_DATABASE.currentUserId,
+        printLogs: parsed.printLogs || [],
       };
     }
   } catch (error) {

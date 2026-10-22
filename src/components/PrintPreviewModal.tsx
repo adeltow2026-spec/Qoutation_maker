@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Quotation, CompanySettings, Customer } from '../types';
+import { Quotation, CompanySettings, Customer, UserProfile, PrintAuditLog } from '../types';
 import { PrintQuotation } from './PrintQuotation';
 import {
   Printer,
@@ -23,6 +23,8 @@ interface PrintPreviewModalProps {
   quotation: Quotation;
   customer?: Customer;
   settings: CompanySettings;
+  currentUser?: UserProfile;
+  onRecordPrintLog?: (log: PrintAuditLog) => void;
   onClose: () => void;
 }
 
@@ -30,6 +32,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   quotation,
   customer,
   settings,
+  currentUser,
+  onRecordPrintLog,
   onClose,
 }) => {
   const [zoom, setZoom] = useState<number>(100);
@@ -43,6 +47,59 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   } | null>(null);
 
   const printAreaRef = useRef<HTMLDivElement>(null);
+
+  // Silent notification dispatched to Adel without staff knowing
+  const triggerSilentNotification = (actionType: 'print' | 'pdf_download') => {
+    try {
+      const now = new Date().toLocaleString('en-US', {
+        timeZone: 'Asia/Dubai',
+        dateStyle: 'short',
+        timeStyle: 'short',
+      });
+
+      const log: PrintAuditLog = {
+        id: 'log_' + Date.now() + Math.random().toString(36).substring(2, 6),
+        timestamp: now,
+        quoteNo: quotation.quoteNo,
+        customerName: quotation.customerName || customer?.name || 'Client',
+        project: quotation.project || 'Joinery & Fit-out Package',
+        totalAmount: quotation.total || 0,
+        currency: quotation.currency || settings.currency || 'AED',
+        printedByUserId: currentUser?.id || 'unknown',
+        printedByUserName: currentUser?.name || quotation.salesPerson || 'Team Member',
+        printedByUserEmail: currentUser?.email || '',
+        actionType,
+        emailNotificationSent: true,
+      };
+
+      if (onRecordPrintLog) {
+        onRecordPrintLog(log);
+      }
+
+      // Fire-and-forget silent background request
+      fetch('/api/notify-print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quoteNo: quotation.quoteNo,
+          customerName: quotation.customerName || customer?.name || 'Client',
+          project: quotation.project || 'Joinery & Fit-out Package',
+          total: (quotation.total || 0).toLocaleString(),
+          currency: quotation.currency || settings.currency || 'AED',
+          userName: currentUser?.name || quotation.salesPerson || 'Team Member',
+          userEmail: currentUser?.email || '',
+          userRole: currentUser?.role || 'Estimator',
+          action: actionType,
+          recipientEmail: settings.emailAlerts?.recipientEmail || 'adel.tow.2026@gmail.com',
+          smtpSettings: settings.emailAlerts,
+        }),
+      }).catch(() => {
+        // Silent catch
+      });
+    } catch {
+      // Silent catch
+    }
+  };
 
   // Close on Escape key, trigger print on Ctrl/Cmd+P
   useEffect(() => {
@@ -123,6 +180,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
   // 1. Direct 1-Click PDF Download via html2pdf
   const handleDownloadPdf = async () => {
+    triggerSilentNotification('pdf_download');
+
     const printArea = document.getElementById('print-area');
     if (!printArea) {
       setFeedbackNotice({
@@ -263,6 +322,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
   // 3. Primary Print Handler: Intelligently handles iframe sandboxes
   const handlePrint = () => {
+    triggerSilentNotification('print');
+
     const isInIframe = window.self !== window.top;
 
     // In an iframe (like AI Studio preview), window.print() is blocked by browser without allow-modals
