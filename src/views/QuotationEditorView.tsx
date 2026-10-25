@@ -23,6 +23,7 @@ import {
   calculateQuotationTotals,
   calculateCategoryTotal,
   CATEGORY_THEMES,
+  parsePaymentMilestones,
 } from '../utils/formatters';
 import { ProductPickerModal } from '../components/ProductPickerModal';
 import { FormattedDescription } from '../components/FormattedDescription';
@@ -134,9 +135,18 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
   const [pickerModalOpen, setPickerModalOpen] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<{ scopeIndex: number; catIndex: number } | null>(null);
 
-  // Sync when initial quote changes (e.g. loaded from list)
+  const activeQuoteIdRef = useRef<string>(initialQuotation.id);
+
+  // Sync ONLY when a genuinely different quotation is opened (e.g. from quotations list or Reset)
   useEffect(() => {
-    setQuote(resolveQuoteDefaults(initialQuotation));
+    if (initialQuotation.id !== activeQuoteIdRef.current) {
+      activeQuoteIdRef.current = initialQuotation.id;
+      setQuote(resolveQuoteDefaults(initialQuotation));
+    }
+  }, [initialQuotation.id]);
+
+  // Sync salesperson selection without resetting quote content
+  useEffect(() => {
     const existingUser = users.find((u) => u.name === initialQuotation.salesPerson);
     if (existingUser) {
       setSalesPersonMode(existingUser.name);
@@ -156,7 +166,7 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
       setSalesPersonMode(activeName);
       setSalesPersonCustom('');
     }
-  }, [initialQuotation, users, currentUserId]);
+  }, [initialQuotation.id, initialQuotation.salesPerson, users, currentUserId]);
 
   // Per-scope photo upload handlers
   const handleScopePhotoUpload = (scopeIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -950,13 +960,16 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
                         dir="ltr"
                         min="0"
                         step="0.1"
-                        value={quote.vatPct}
-                        onChange={(e) =>
+                        value={quote.vatPct === 0 ? '' : quote.vatPct}
+                        placeholder="0"
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => {
+                          const v = e.target.value;
                           setQuote({
                             ...quote,
-                            vatPct: Math.max(0, parseFloat(e.target.value) || 0),
-                          })
-                        }
+                            vatPct: v === '' ? 0 : Math.max(0, parseFloat(v) || 0),
+                          });
+                        }}
                         className="w-12 px-1.5 py-0.5 text-xs text-left font-mono bg-white border border-slate-300 rounded"
                       />
                       <span>%</span>
@@ -977,6 +990,41 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
                       </span>
                     </div>
                   </div>
+
+                  {/* Payment Timeline Breakdown / Milestone Rates & Amounts */}
+                  {(() => {
+                    const milestones = parsePaymentMilestones(quote.paymentTerms, totals.grandTotal);
+                    return (
+                      <div className="mt-3 pt-3 border-t border-slate-200/90 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            Payment Timeline Amounts
+                          </span>
+                          <span className="text-[10px] font-semibold text-slate-400">
+                            Milestone Schedule
+                          </span>
+                        </div>
+                        <div className="bg-amber-50/70 border border-amber-200/80 rounded-lg p-2.5 space-y-1.5 text-xs">
+                          {milestones.map((m, idx) => (
+                            <div key={idx} className="flex justify-between items-center text-[11px]">
+                              <div className="flex items-center gap-1.5 pr-2 truncate">
+                                <span className="font-bold text-amber-950 font-mono shrink-0 bg-amber-200/70 border border-amber-300/80 px-1 py-0.2 rounded text-[10px]">
+                                  {m.percent}%
+                                </span>
+                                <span className="text-slate-800 font-medium truncate" title={m.label}>
+                                  {m.label}
+                                </span>
+                              </div>
+                              <span className="font-mono font-bold text-amber-950 shrink-0">
+                                {formatMoney(m.amount)} {quote.currency}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="pt-2">

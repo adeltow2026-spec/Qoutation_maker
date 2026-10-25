@@ -56,6 +56,57 @@ interface InternalCostingSpreadsheetProps {
   ) => void;
 }
 
+const SpreadsheetNumberInput: React.FC<{
+  value: number;
+  onChange: (val: number) => void;
+  className?: string;
+  placeholder?: string;
+  dir?: string;
+  title?: string;
+}> = ({ value, onChange, className, placeholder = '0', dir, title }) => {
+  const [text, setText] = React.useState<string>(() => (value === 0 ? '0' : String(value)));
+  const isFocusedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!isFocusedRef.current) {
+      setText(value === 0 ? '0' : String(value));
+    }
+  }, [value]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      dir={dir}
+      title={title}
+      placeholder={placeholder}
+      value={text}
+      onFocus={(e) => {
+        isFocusedRef.current = true;
+        e.target.select();
+      }}
+      onBlur={() => {
+        isFocusedRef.current = false;
+        const parsed = parseFloat(text.replace(/,/g, ''));
+        const safeNum = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+        onChange(safeNum);
+        setText(safeNum === 0 ? '0' : String(safeNum));
+      }}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        const parsed = parseFloat(raw.replace(/,/g, ''));
+        if (!isNaN(parsed)) {
+          onChange(parsed);
+        } else if (raw === '') {
+          onChange(0);
+        }
+      }}
+      className={className}
+    />
+  );
+};
+
 export const InternalCostingSpreadsheet: React.FC<InternalCostingSpreadsheetProps> = ({
   quote,
   products,
@@ -110,16 +161,14 @@ export const InternalCostingSpreadsheet: React.FC<InternalCostingSpreadsheetProp
 
         {/* Editable Overheads & Markup Controls (Mobile 2-column grid, Desktop flex) */}
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3">
-          {/* Overheads */}
+          {/* Overhead */}
           <div className="flex items-center justify-between sm:justify-start gap-1.5 bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-slate-700 text-xs">
             <span className="text-[10px] sm:text-[11px] text-slate-300 font-semibold">Overhead:</span>
             <div className="flex items-center">
-              <input
-                type="number"
-                min="0"
-                max="100"
+              <SpreadsheetNumberInput
                 value={overheadPct}
-                onChange={(e) => setOverheadPct(Math.max(0, parseFloat(e.target.value) || 0))}
+                onChange={setOverheadPct}
+                placeholder="0"
                 className="w-12 sm:w-14 px-1 py-0.5 text-xs font-mono font-bold text-center bg-slate-900 text-blue-400 border border-slate-600 rounded focus:border-blue-400 focus:outline-none"
               />
               <span className="text-xs font-bold text-slate-400 ml-1">%</span>
@@ -130,14 +179,12 @@ export const InternalCostingSpreadsheet: React.FC<InternalCostingSpreadsheetProp
           <div className="flex items-center justify-between sm:justify-start gap-1.5 bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-emerald-900/60 text-xs">
             <span className="text-[10px] sm:text-[11px] text-emerald-300 font-bold">Markup:</span>
             <div className="flex items-center">
-              <input
-                type="number"
-                min="0"
-                max="500"
+              <SpreadsheetNumberInput
                 value={markupPct}
-                onChange={(e) => setMarkupPct(Math.max(0, parseFloat(e.target.value) || 0))}
-                className="w-12 sm:w-14 px-1 py-0.5 text-xs font-mono font-bold text-center bg-slate-900 text-emerald-400 border border-emerald-600 rounded focus:border-emerald-400 focus:outline-none"
+                onChange={setMarkupPct}
+                placeholder="0"
                 title="Adjust markup percentage for this quotation"
+                className="w-12 sm:w-14 px-1 py-0.5 text-xs font-mono font-bold text-center bg-slate-900 text-emerald-400 border border-emerald-600 rounded focus:border-emerald-400 focus:outline-none"
               />
               <span className="text-xs font-bold text-emerald-400 ml-1">%</span>
             </div>
@@ -213,19 +260,11 @@ export const InternalCostingSpreadsheet: React.FC<InternalCostingSpreadsheetProp
                   {/* Scope Qty & Unit */}
                   <div className="flex items-center gap-1 bg-slate-800 px-2 py-1 rounded-lg border border-slate-700 text-xs text-slate-300">
                     <span className="text-[10px] text-slate-400">Qty:</span>
-                    <input
-                      type="number"
-                      dir="ltr"
-                      min="0"
-                      step="0.1"
+                    <SpreadsheetNumberInput
                       value={scope.qty}
-                      onChange={(e) =>
-                        onUpdateScopeField(
-                          scopeIndex,
-                          'qty',
-                          Math.max(0, parseFloat(e.target.value) || 0)
-                        )
-                      }
+                      onChange={(val) => onUpdateScopeField(scopeIndex, 'qty', val)}
+                      placeholder="1"
+                      dir="ltr"
                       className="w-12 sm:w-14 px-1 py-0.5 text-xs font-mono font-bold text-right text-white bg-slate-900 border border-slate-600 rounded focus:border-blue-400 focus:outline-none"
                     />
                     <input
@@ -522,41 +561,25 @@ export const InternalCostingSpreadsheet: React.FC<InternalCostingSpreadsheetProp
                                 </td>
 
                                 <td className="py-1.5 px-2 border-r border-slate-200 text-right">
-                                  <input
-                                    type="number"
-                                    dir="ltr"
-                                    min="0"
-                                    step="0.1"
+                                  <SpreadsheetNumberInput
                                     value={row.qty}
-                                    onChange={(e) =>
-                                      onUpdateRowField(
-                                        scopeIndex,
-                                        catIndex,
-                                        rowIndex,
-                                        'qty',
-                                        Math.max(0, parseFloat(e.target.value) || 0)
-                                      )
+                                    onChange={(val) =>
+                                      onUpdateRowField(scopeIndex, catIndex, rowIndex, 'qty', val)
                                     }
+                                    placeholder="1"
+                                    dir="ltr"
                                     className="w-20 px-2 py-1 text-xs font-mono font-semibold text-right bg-transparent hover:bg-white focus:bg-white border border-transparent hover:border-slate-300 focus:border-blue-600 rounded focus:outline-none"
                                   />
                                 </td>
 
                                 <td className="py-1.5 px-2 border-r border-slate-200 text-right">
-                                  <input
-                                    type="number"
-                                    dir="ltr"
-                                    min="0"
-                                    step="0.01"
+                                  <SpreadsheetNumberInput
                                     value={row.cost}
-                                    onChange={(e) =>
-                                      onUpdateRowField(
-                                        scopeIndex,
-                                        catIndex,
-                                        rowIndex,
-                                        'cost',
-                                        Math.max(0, parseFloat(e.target.value) || 0)
-                                      )
+                                    onChange={(val) =>
+                                      onUpdateRowField(scopeIndex, catIndex, rowIndex, 'cost', val)
                                     }
+                                    placeholder="0.00"
+                                    dir="ltr"
                                     className="w-24 px-2 py-1 text-xs font-mono font-bold text-right text-blue-900 bg-transparent hover:bg-white focus:bg-white border border-transparent hover:border-slate-300 focus:border-blue-600 rounded focus:outline-none"
                                   />
                                 </td>
@@ -715,20 +738,12 @@ export const InternalCostingSpreadsheet: React.FC<InternalCostingSpreadsheetProp
                                   <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">
                                     Qty
                                   </label>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="0.1"
+                                  <SpreadsheetNumberInput
                                     value={row.qty}
-                                    onChange={(e) =>
-                                      onUpdateRowField(
-                                        scopeIndex,
-                                        catIndex,
-                                        rowIndex,
-                                        'qty',
-                                        Math.max(0, parseFloat(e.target.value) || 0)
-                                      )
+                                    onChange={(val) =>
+                                      onUpdateRowField(scopeIndex, catIndex, rowIndex, 'qty', val)
                                     }
+                                    placeholder="1"
                                     className="w-full px-2 py-1 text-xs font-mono font-bold text-center bg-white border border-slate-200 rounded focus:border-blue-600"
                                   />
                                 </div>
@@ -757,20 +772,12 @@ export const InternalCostingSpreadsheet: React.FC<InternalCostingSpreadsheetProp
                                   <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">
                                     Unit Cost ({quote.currency})
                                   </label>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
+                                  <SpreadsheetNumberInput
                                     value={row.cost}
-                                    onChange={(e) =>
-                                      onUpdateRowField(
-                                        scopeIndex,
-                                        catIndex,
-                                        rowIndex,
-                                        'cost',
-                                        Math.max(0, parseFloat(e.target.value) || 0)
-                                      )
+                                    onChange={(val) =>
+                                      onUpdateRowField(scopeIndex, catIndex, rowIndex, 'cost', val)
                                     }
+                                    placeholder="0.00"
                                     className="w-full px-2 py-1 text-xs font-mono font-bold text-right text-blue-900 bg-white border border-slate-200 rounded focus:border-blue-600"
                                   />
                                 </div>

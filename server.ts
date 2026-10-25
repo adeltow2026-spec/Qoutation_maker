@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
@@ -17,12 +18,54 @@ async function startServer() {
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
+  // Shared Centralized Database file for multi-device sync
+  const DB_DIR = path.join(process.cwd(), 'data');
+  const DB_FILE = path.join(DB_DIR, 'shared_database.json');
+
+  if (!fs.existsSync(DB_DIR)) {
+    fs.mkdirSync(DB_DIR, { recursive: true });
+  }
+
   // Health check endpoint
   app.get('/api/health', (req: Request, res: Response) => {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
     });
+  });
+
+  // Shared Database: Read latest state across all devices
+  app.get('/api/db', (req: Request, res: Response) => {
+    try {
+      if (fs.existsSync(DB_FILE)) {
+        const raw = fs.readFileSync(DB_FILE, 'utf8');
+        const parsed = JSON.parse(raw);
+        return res.json(parsed);
+      }
+      return res.json({ notInitialized: true });
+    } catch (err: any) {
+      console.error('Error reading shared database file:', err);
+      return res.status(500).json({ error: 'Failed to read database' });
+    }
+  });
+
+  // Shared Database: Save/Sync state from any device
+  app.post('/api/db', (req: Request, res: Response) => {
+    try {
+      const payload = req.body;
+      if (!payload || !payload.settings) {
+        return res.status(400).json({ error: 'Invalid database payload' });
+      }
+
+      const tempFile = `${DB_FILE}.tmp`;
+      fs.writeFileSync(tempFile, JSON.stringify(payload, null, 2), 'utf8');
+      fs.renameSync(tempFile, DB_FILE);
+
+      return res.json({ success: true, timestamp: new Date().toISOString() });
+    } catch (err: any) {
+      console.error('Error saving shared database file:', err);
+      return res.status(500).json({ error: 'Failed to save database' });
+    }
   });
 
   // Silent Print Notification endpoint (Dispatches alert to Adel whenever a quotation is printed/downloaded)

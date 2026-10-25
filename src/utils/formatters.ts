@@ -169,3 +169,61 @@ export function numberToWords(amount: number, currency: string = 'AED'): string 
   return formatted + ' Only';
 }
 
+export interface PaymentMilestone {
+  percent: number;
+  label: string;
+  amount: number;
+}
+
+export function parsePaymentMilestones(
+  termsText: string | undefined | null,
+  totalAmount: number
+): PaymentMilestone[] {
+  const safeTotal = Math.max(0, Number(totalAmount) || 0);
+
+  if (!termsText || !termsText.trim()) {
+    return [
+      { percent: 60, label: 'Advance Payment (Order Confirmation)', amount: safeTotal * 0.6 },
+      { percent: 30, label: 'Progress Payment (Factory Fabrication)', amount: safeTotal * 0.3 },
+      { percent: 10, label: 'Final Payment (Site Handover & Delivery)', amount: safeTotal * 0.1 },
+    ];
+  }
+
+  const lines = termsText.split('\n').map((l) => l.trim()).filter(Boolean);
+  const milestones: PaymentMilestone[] = [];
+
+  for (const line of lines) {
+    const pctMatch = line.match(/(\d+(?:\.\d+)?)\s*%/);
+    if (pctMatch) {
+      const percent = parseFloat(pctMatch[1]);
+      if (percent > 0 && percent <= 100) {
+        let cleanLabel = line
+          .replace(/^([0-9]+[.)\-•*]\s*|\s*[•\-*]\s*)/, '')
+          .replace(/\b\d+(?:\.\d+)?\s*%\s*(?:of\s*(?:total|contract|amount))?\s*(?:in|upon|along with|prior to|on)?/i, '')
+          .trim();
+
+        if (!cleanLabel) {
+          cleanLabel = `Milestone (${percent}%)`;
+        } else {
+          cleanLabel = cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1);
+        }
+
+        milestones.push({
+          percent,
+          label: cleanLabel,
+          amount: Math.round(((safeTotal * percent) / 100) * 100) / 100,
+        });
+      }
+    }
+  }
+
+  if (milestones.length === 0) {
+    return [
+      { percent: 60, label: 'Advance Payment (Order Confirmation)', amount: safeTotal * 0.6 },
+      { percent: 30, label: 'Progress Payment (Factory Fabrication)', amount: safeTotal * 0.3 },
+      { percent: 10, label: 'Final Payment (Site Handover & Delivery)', amount: safeTotal * 0.1 },
+    ];
+  }
+
+  return milestones;
+}

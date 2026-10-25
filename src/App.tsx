@@ -8,7 +8,13 @@ import {
   UserProfile,
   PrintAuditLog,
 } from './types';
-import { loadDatabase, saveDatabase, exportDatabaseBackup } from './utils/storage';
+import {
+  loadDatabase,
+  saveDatabase,
+  fetchServerDatabase,
+  saveServerDatabase,
+  exportDatabaseBackup,
+} from './utils/storage';
 import {
   generateQuoteNumber,
   createBlankScope,
@@ -221,9 +227,112 @@ export default function App() {
   // Print view state
   const [printingQuote, setPrintingQuote] = useState<Quotation | null>(null);
 
-  // Sync to database storage
+  // Auto-sync with central server across all devices
+  const isServerInitialized = React.useRef(false);
+  const isRemoteSyncRef = React.useRef(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const syncFromServer = async () => {
+      const serverDb = await fetchServerDatabase();
+      if (!isMounted) return;
+
+      if (serverDb && serverDb.settings) {
+        setDb((prevLocal) => {
+          // Keep current logged-in user session stable on this device
+          const currentLocalUserId = prevLocal.currentUserId;
+
+          // Merge quotes: combine quotes from server and local state so staff quotes on other devices are never lost
+          const serverQuotes = Array.isArray(serverDb.quotes) ? serverDb.quotes : [];
+          const localQuotes = Array.isArray(prevLocal.quotes) ? prevLocal.quotes : [];
+          const quoteMap = new Map<string, Quotation>();
+
+          // Insert server quotes
+          serverQuotes.forEach((q) => quoteMap.set(q.id, q));
+
+          // Merge local quotes if newer or not yet synchronized to server
+          localQuotes.forEach((lq) => {
+            const sq = quoteMap.get(lq.id);
+            if (!sq) {
+              quoteMap.set(lq.id, lq);
+            } else {
+              const lqTime = new Date(lq.updatedAt || 0).getTime();
+              const sqTime = new Date(sq.updatedAt || 0).getTime();
+              if (lqTime > sqTime) {
+                quoteMap.set(lq.id, lq);
+              }
+            }
+          });
+
+          // Sort descending by date/creation
+          const mergedQuotes = Array.from(quoteMap.values()).sort((a, b) => {
+            const tA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+            const tB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+            return tB - tA;
+          });
+
+          // Check if server data actually has any differences before returning a new state object
+          if (isServerInitialized.current) {
+            const sameQuotes =
+              mergedQuotes.length === (prevLocal.quotes?.length || 0) &&
+              (mergedQuotes[0]?.id === prevLocal.quotes?.[0]?.id) &&
+              (mergedQuotes[0]?.updatedAt === prevLocal.quotes?.[0]?.updatedAt);
+            const sameUsers =
+              (serverDb.users?.length || 0) === (prevLocal.users?.length || 0);
+            const sameLibrary =
+              (serverDb.library?.length || 0) === (prevLocal.library?.length || 0);
+
+            if (sameQuotes && sameUsers && sameLibrary) {
+              return prevLocal; // No changes! Keep same object reference so React does not trigger child re-renders!
+            }
+          }
+
+          const updatedDb = {
+            ...serverDb,
+            quotes: mergedQuotes,
+            currentUserId: currentLocalUserId || serverDb.currentUserId,
+          };
+
+          isRemoteSyncRef.current = true;
+          saveDatabase(updatedDb);
+          isServerInitialized.current = true;
+          return updatedDb;
+        });
+      } else if (!serverDb && !isServerInitialized.current) {
+        // If server is not initialized yet, seed it with the current database
+        saveServerDatabase(db);
+        isServerInitialized.current = true;
+      }
+    };
+
+    // 1. Initial sync
+    syncFromServer();
+
+    // 2. Periodic sync every 5 seconds so quotes from other devices appear in real-time
+    const interval = setInterval(syncFromServer, 5000);
+
+    // 3. Tab focus sync
+    const handleFocus = () => {
+      syncFromServer();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  // Save changes to local storage & central server
   useEffect(() => {
     saveDatabase(db);
+    if (isRemoteSyncRef.current) {
+      isRemoteSyncRef.current = false;
+      return;
+    }
+    saveServerDatabase(db);
   }, [db]);
 
   const addToast = (type: ToastMessage['type'], title: string, message?: string) => {
@@ -245,26 +354,34 @@ export default function App() {
 
   // Quotation Editor Actions
   const handleSaveQuotation = (quoteToSave: Quotation) => {
-    const existingIndex = db.quotes.findIndex((q) => q.id === quoteToSave.id);
-    let updatedQuotes = [...db.quotes];
+    setDb((prev) => {
+      const quotes = prev.quotes || [];
+      const existingIndex = quotes.findIndex((q) => q.id === quoteToSave.id);
+      let updatedQuotes = [...quotes];
 
-    if (existingIndex >= 0) {
-      updatedQuotes[existingIndex] = quoteToSave;
-    } else {
-      updatedQuotes.push(quoteToSave);
-    }
+      if (existingIndex >= 0) {
+        updatedQuotes[existingIndex] = quoteToSave;
+      } else {
+        updatedQuotes.unshift(quoteToSave);
+      }
 
-    setDb((prev) => ({
-      ...prev,
-      quotes: updatedQuotes,
-      draft: null, // Clear active draft once finalized
-      nextQuote: existingIndex >= 0 ? prev.nextQuote : prev.nextQuote + 1,
-    }));
+      const nextDb = {
+        ...prev,
+        quotes: updatedQuotes,
+        draft: null, // Clear active draft once finalized
+        nextQuote: existingIndex >= 0 ? prev.nextQuote : prev.nextQuote + 1,
+      };
+
+      saveDatabase(nextDb);
+      saveServerDatabase(nextDb); // Instant push to server so Admin immediately receives it
+
+      return nextDb;
+    });
 
     addToast(
       'success',
       'Quotation Saved Successfully',
-      `${quoteToSave.quoteNo} is stored in your quotations directory.`
+      `${quoteToSave.quoteNo} is synchronized and stored in your quotations directory.`
     );
   };
 

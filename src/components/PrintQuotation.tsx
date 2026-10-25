@@ -5,6 +5,7 @@ import {
   getScopeFinalUnitPrice,
   calculateScopeLineTotal,
   numberToWords,
+  parsePaymentMilestones,
 } from '../utils/formatters';
 import { Landmark, Clock, FileCheck2, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 import { FormattedDescription } from './FormattedDescription';
@@ -60,17 +61,6 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
   };
 
   const amountInWords = numberToWords(quotation.total, quotation.currency || 'AED');
-
-  const paymentTermsList = (
-    quotation.paymentTerms ||
-    settings.paymentTerms ||
-    `1. 60% Advance Payment along with signed quotation & order confirmation
-2. 30% Upon completion of factory joinery fabrication & progressive painting
-3. 10% Prior to final site delivery and handover`
-  )
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean);
 
   const completionSchedule = (
     quotation.completionTerms ||
@@ -289,46 +279,92 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
         </table>
       </div>
 
-      {/* Financial Summary & Amount in Words Block */}
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mb-6 print-avoid-break items-start">
-        {/* Left: Amount in Words */}
-        <div className="sm:col-span-7 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 flex items-start gap-2.5">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Total Amount in Words:
-            </div>
-            <div className="text-xs font-bold text-slate-900 mt-0.5 leading-snug">
-              {amountInWords || `${quotation.currency} ${formatMoney(quotation.total)} Only`}
-            </div>
-            <div className="text-[10px] text-slate-500 mt-1">
-              All rates inclusive of fabrication, finishing, and site installation as detailed.
-            </div>
-          </div>
-        </div>
+      {/* Unified Financial Summary, Amount in Words & Payment Timeline Box */}
+      {(() => {
+        const milestones = parsePaymentMilestones(quotation.paymentTerms || settings.paymentTerms, quotation.total);
+        return (
+          <div className="mb-6 rounded-xl border border-slate-300 bg-slate-50/90 p-4 print-avoid-break space-y-3.5 shadow-2xs">
+            {/* Top Row: Amount in Words (Left) and Total Calculation (Right) */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start pb-3 border-b border-slate-200">
+              {/* Left Column: Total Amount in Words */}
+              <div className="sm:col-span-7 flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Total Amount in Words:
+                  </div>
+                  <div className="text-xs font-bold text-slate-900 leading-snug">
+                    {amountInWords || `${quotation.currency} ${formatMoney(quotation.total)} Only`}
+                  </div>
+                  <div className="text-[10px] text-slate-500 pt-0.5">
+                    All rates inclusive of fabrication, finishing, and site installation as detailed.
+                  </div>
+                </div>
+              </div>
 
-        {/* Right: Calculations breakdown */}
-        <div className="sm:col-span-5 bg-slate-50/90 p-4 rounded-xl border border-slate-200 space-y-2">
-          <div className="flex justify-between text-xs text-slate-600">
-            <span>Subtotal:</span>
-            <span className="font-mono font-bold text-slate-900">
-              {formatMoney(quotation.subtotal)} {quotation.currency}
-            </span>
+              {/* Right Column: Subtotal, VAT, Grand Total */}
+              <div className="sm:col-span-5 sm:pl-4 sm:border-l sm:border-slate-200 space-y-1.5">
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Subtotal:</span>
+                  <span className="font-mono font-bold text-slate-900">
+                    {formatMoney(quotation.subtotal)} {quotation.currency}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>VAT ({quotation.vatPct}%):</span>
+                  <span className="font-mono font-bold text-slate-900">
+                    {formatMoney(quotation.vatAmount)} {quotation.currency}
+                  </span>
+                </div>
+                <div className="border-t-2 border-slate-900 pt-1.5 flex justify-between items-baseline font-bold text-slate-900">
+                  <span className="text-xs uppercase tracking-wide">Grand Total:</span>
+                  <span className="text-base sm:text-lg font-mono text-amber-950 font-black">
+                    {formatMoney(quotation.total)} {quotation.currency}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Terms & Milestone Breakdown */}
+            {milestones.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                  <span className="flex items-center gap-1.5 text-slate-700">
+                    <Clock className="w-3.5 h-3.5 text-amber-800" />
+                    Payment Terms &amp; Milestone Breakdown
+                  </span>
+                  <span>Calculated Milestone Amount</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {milestones.map((m, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-white p-2.5 rounded-lg border border-slate-200 flex flex-col justify-between"
+                    >
+                      <div className="flex items-start gap-1.5 mb-1.5">
+                        <span className="font-mono text-amber-950 font-black bg-amber-100 border border-amber-300 px-1.5 py-0.2 rounded text-[10px] shrink-0">
+                          {m.percent}%
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-800 leading-snug">
+                          {m.label}
+                        </span>
+                      </div>
+                      <div className="text-right pt-1 border-t border-slate-100">
+                        <span className="font-mono font-black text-amber-950 text-xs sm:text-[13px]">
+                          {formatMoney(m.amount)} {quotation.currency}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Payment Terms & Milestone Breakdown cards */}
+              </div>
+            )}
           </div>
-          <div className="flex justify-between text-xs text-slate-600">
-            <span>VAT ({quotation.vatPct}%):</span>
-            <span className="font-mono font-bold text-slate-900">
-              {formatMoney(quotation.vatAmount)} {quotation.currency}
-            </span>
-          </div>
-          <div className="border-t-2 border-slate-900 pt-2 flex justify-between items-baseline font-bold text-slate-900">
-            <span className="text-xs uppercase tracking-wide">Grand Total:</span>
-            <span className="text-base sm:text-lg font-mono text-amber-950 font-black">
-              {formatMoney(quotation.total)} {quotation.currency}
-            </span>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Custom Commercial Notes (If entered by estimator) */}
       {quotation.notes && quotation.notes.trim() && (
@@ -362,57 +398,41 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
         </div>
       )}
 
-      {/* Payment Terms & Bank Wire Details Dual Box */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 print-avoid-break">
-        {/* Payment & Completion */}
-        <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3.5 text-xs space-y-2">
-          <div className="font-bold text-amber-950 flex items-center gap-1.5 uppercase text-[10.5px] tracking-wider">
-            <Clock className="w-3.5 h-3.5 text-amber-800" />
-            Payment Terms &amp; Completion Schedule
-          </div>
-          <div className="text-[10.5px] text-slate-800 space-y-1">
-            {paymentTermsList.length > 0 ? (
-              paymentTermsList.map((term, idx) => {
-                const parts = term.match(/^([0-9]+[.)\-•*]\s*|\s*[•\-*]\s*)?(.*)$/);
-                const prefix = parts && parts[1] ? parts[1].trim() : `${idx + 1}.`;
-                const text = parts && parts[2] ? parts[2].trim() : term;
-                const percentMatch = text.match(/^(\d+%\s*)(.*)$/);
-                if (percentMatch) {
-                  return (
-                    <p key={idx} className="pl-1 leading-snug">
-                      <span className="font-bold text-amber-950">{prefix} </span>
-                      <strong className="text-amber-950 font-black">{percentMatch[1]}</strong>
-                      {percentMatch[2]}
-                    </p>
-                  );
-                }
-                return (
-                  <p key={idx} className="pl-1 leading-snug">
-                    <span className="font-bold text-amber-950">{prefix} </span>
-                    {text}
-                  </p>
-                );
-              })
-            ) : (
-              <p className="pl-1 leading-snug text-slate-600 italic">As mutually agreed in official contract</p>
-            )}
-          </div>
-          {completionSchedule && (
-            <div className="pt-1.5 border-t border-amber-200/60 text-[10px] text-slate-800 leading-normal">
-              <span className="font-bold text-amber-950">Completion of Works:</span>{' '}
-              {completionSchedule}
+      {/* Project Completion Schedule & Official Bank Wire Details Dual Box */}
+      <div className={`grid ${showBankDetails ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-4 mb-6 print-avoid-break`}>
+        {/* Project Delivery & Completion Schedule */}
+        <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3.5 text-xs space-y-2 flex flex-col justify-between">
+          <div>
+            <div className="font-bold text-amber-950 flex items-center gap-1.5 uppercase text-[10.5px] tracking-wider">
+              <Clock className="w-3.5 h-3.5 text-amber-800" />
+              Project Delivery &amp; Completion Schedule
             </div>
-          )}
+            <div className="text-[10.5px] text-slate-800 space-y-1.5 pt-1.5">
+              <div className="leading-snug">
+                <span className="font-bold text-amber-950">Completion Timeline: </span>
+                <span className="text-slate-900 font-semibold">{completionSchedule}</span>
+              </div>
+              <p className="leading-snug text-slate-600 text-[10px]">
+                <strong className="text-slate-800">Mobilization:</strong> Commences upon receipt of confirmed advance payment, signed approval, and final site dimensions.
+              </p>
+              <p className="leading-snug text-slate-600 text-[10px]">
+                <strong className="text-slate-800">Site Handover:</strong> Uninterrupted site access is required for on-schedule delivery and installation.
+              </p>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-amber-200/60 text-[9.5px] text-amber-900/80 italic">
+            Schedule is subject to prompt client approvals and confirmed site readiness.
+          </div>
         </div>
 
-        {/* Bank Wire Details */}
+        {/* Official Bank Wire Details - Beautiful Compact Vertical Layout */}
         {showBankDetails && (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs space-y-1">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs space-y-1.5">
             <div className="font-bold text-slate-900 flex items-center gap-1.5 uppercase text-[10.5px] tracking-wider">
               <Landmark className="w-3.5 h-3.5 text-blue-700" />
               Official Bank Wire Details
             </div>
-            <div className="text-[10.5px] space-y-0.5 text-slate-700 leading-snug">
+            <div className="text-[10.5px] space-y-1 text-slate-700 leading-snug pt-0.5">
               <div>
                 <span className="text-slate-500">Beneficiary:</span>{' '}
                 <span className="font-bold text-slate-900">{bank.accountName}</span>
@@ -423,11 +443,12 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
               </div>
               <div>
                 <span className="text-slate-500">Account No:</span>{' '}
-                <span className="font-mono font-bold text-slate-900">{bank.accountNumber}</span> ({bank.currency})
+                <span className="font-mono font-bold text-slate-900">{bank.accountNumber}</span>{' '}
+                <span className="text-slate-500 text-[10px]">({bank.currency})</span>
               </div>
               <div>
                 <span className="text-slate-500">IBAN:</span>{' '}
-                <span className="font-mono font-bold text-amber-950 bg-amber-50 px-1 py-0.2 rounded border border-amber-200">
+                <span className="font-mono font-bold text-amber-950 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-xs inline-block">
                   {bank.iban}
                 </span>
               </div>

@@ -96,6 +96,34 @@ export function saveDatabase(db: AppDatabase): void {
   }
 }
 
+export async function fetchServerDatabase(): Promise<AppDatabase | null> {
+  try {
+    const res = await fetch('/api/db');
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && !data.notInitialized && data.settings) {
+      return data as AppDatabase;
+    }
+  } catch (err) {
+    console.warn('Could not fetch shared database from server:', err);
+  }
+  return null;
+}
+
+export async function saveServerDatabase(db: AppDatabase): Promise<boolean> {
+  try {
+    const res = await fetch('/api/db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(db),
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('Could not save database to server:', err);
+    return false;
+  }
+}
+
 export function exportDatabaseBackup(db: AppDatabase): void {
   const jsonStr = JSON.stringify(db, null, 2);
   const blob = new Blob([jsonStr], { type: 'application/json' });

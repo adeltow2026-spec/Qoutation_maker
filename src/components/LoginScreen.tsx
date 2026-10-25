@@ -19,37 +19,60 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
-    setTimeout(() => {
-      const cleanIdent = identifier.trim().toLowerCase();
-      const targetUser = users.find(
-        (u) =>
-          u.email.toLowerCase() === cleanIdent ||
-          u.name.toLowerCase() === cleanIdent ||
-          (cleanIdent === 'adel' && u.name.toLowerCase().includes('adel'))
-      );
+    const cleanIdent = identifier.trim().toLowerCase();
+    let activeUsersList = [...users];
 
-      if (!targetUser) {
-        setError('Invalid email or username. Please check your credentials.');
-        setIsLoading(false);
-        return;
+    let targetUser = activeUsersList.find(
+      (u) =>
+        u.email.toLowerCase() === cleanIdent ||
+        u.name.toLowerCase() === cleanIdent ||
+        (cleanIdent === 'adel' && u.name.toLowerCase().includes('adel'))
+    );
+
+    // If not found in current props, immediately query central server to verify newly created accounts
+    if (!targetUser) {
+      try {
+        const res = await fetch('/api/db');
+        if (res.ok) {
+          const remoteData = await res.json();
+          if (Array.isArray(remoteData?.users)) {
+            activeUsersList = remoteData.users;
+            targetUser = activeUsersList.find(
+              (u) =>
+                u.email.toLowerCase() === cleanIdent ||
+                u.name.toLowerCase() === cleanIdent ||
+                (cleanIdent === 'adel' && u.name.toLowerCase().includes('adel'))
+            );
+          }
+        }
+      } catch (err) {
+        // Fallback gracefully on local state
       }
+    }
 
-      const expectedPassword = targetUser.password || (targetUser.name.toLowerCase().includes('adel') ? 'Adel@2026' : 'Tow@123');
-
-      if (password !== expectedPassword) {
-        setError('Incorrect password. Please try again.');
-        setIsLoading(false);
-        return;
-      }
-
+    if (!targetUser) {
+      setError('Invalid email or username. Please check your credentials.');
       setIsLoading(false);
-      onLoginSuccess(targetUser);
-    }, 250);
+      return;
+    }
+
+    const expectedPassword =
+      targetUser.password ||
+      (targetUser.name.toLowerCase().includes('adel') ? 'Adel@2026' : 'Tow@123');
+
+    if (password !== expectedPassword) {
+      setError('Incorrect password. Please try again.');
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(false);
+    onLoginSuccess(targetUser);
   };
 
   return (

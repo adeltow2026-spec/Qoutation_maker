@@ -398,10 +398,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 dir="ltr"
                 min="0"
                 step="0.1"
-                value={formData.tax}
-                onChange={(e) =>
-                  setFormData({ ...formData, tax: Math.max(0, parseFloat(e.target.value) || 0) })
-                }
+                value={formData.tax === 0 ? '' : formData.tax}
+                placeholder="0"
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setFormData({ ...formData, tax: v === '' ? 0 : Math.max(0, parseFloat(v) || 0) });
+                }}
                 className="w-full px-3 py-2 text-xs font-mono text-left bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
               />
             </div>
@@ -415,13 +418,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 dir="ltr"
                 min="0"
                 step="0.5"
-                value={formData.overheadPct}
-                onChange={(e) =>
+                value={formData.overheadPct === 0 ? '' : formData.overheadPct}
+                placeholder="0"
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const v = e.target.value;
                   setFormData({
                     ...formData,
-                    overheadPct: Math.max(0, parseFloat(e.target.value) || 0),
-                  })
-                }
+                    overheadPct: v === '' ? 0 : Math.max(0, parseFloat(v) || 0),
+                  });
+                }}
                 className="w-full px-3 py-2 text-xs font-mono text-left bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">Default: 30%</span>
@@ -436,13 +442,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 dir="ltr"
                 min="0"
                 step="0.5"
-                value={formData.markupPct}
-                onChange={(e) =>
+                value={formData.markupPct === 0 ? '' : formData.markupPct}
+                placeholder="0"
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const v = e.target.value;
                   setFormData({
                     ...formData,
-                    markupPct: Math.max(0, parseFloat(e.target.value) || 0),
-                  })
-                }
+                    markupPct: v === '' ? 0 : Math.max(0, parseFloat(v) || 0),
+                  });
+                }}
                 className="w-full px-3 py-2 text-xs font-mono text-left bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">Default: 40%</span>
