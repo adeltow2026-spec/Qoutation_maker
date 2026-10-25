@@ -762,30 +762,29 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Client Items Table & Direct Commercial Notes in Tab 2 */}
-              <div className="lg:col-span-2 space-y-4">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse bg-white rounded-lg border border-slate-200">
+            {/* Full-Width Client Items Table */}
+            <div className="space-y-4">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
+                <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 text-[11px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200">
                       <th className="py-3 px-3 w-10 text-center">#</th>
-                      <th className="py-3 px-3">Scope Description</th>
-                      <th className="py-3 px-2 w-16 text-center">Qty</th>
-                      <th className="py-3 px-2 w-16 text-center">Unit</th>
-                      <th className="py-3 px-3 w-32 text-right">
+                      <th className="py-3 px-4">Scope Description</th>
+                      <th className="py-3 px-3 w-20 text-center">Qty</th>
+                      <th className="py-3 px-3 w-20 text-center">Unit</th>
+                      <th className="py-3 px-4 w-40 text-right">
                         Suggested Unit Price
                         <span className="block text-[10px] text-slate-400 font-normal">
                           (+{markupPct}% markup)
                         </span>
                       </th>
-                      <th className="py-3 px-3 w-36 text-left">
+                      <th className="py-3 px-4 w-44 text-left">
                         Final Client Price
                         <span className="block text-[10px] text-emerald-600 font-normal">
                           (Manual Override)
                         </span>
                       </th>
-                      <th className="py-3 px-3 w-28 text-right">Total ({quote.currency})</th>
+                      <th className="py-3 px-4 w-36 text-right">Total ({quote.currency})</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs">
@@ -800,13 +799,13 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
 
                       return (
                         <tr key={scope.id} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3 px-3 text-center font-bold text-slate-500">
+                          <td className="py-3.5 px-3 text-center font-bold text-slate-500">
                             {scopeIndex + 1}
                           </td>
-                          <td className="py-3 px-3">
-                            <div className="font-bold text-slate-900">{scope.name}</div>
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-slate-900 text-sm">{scope.name}</div>
                             {scope.description ? (
-                              <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-200/70 mt-1">
+                              <div className="bg-slate-50/80 p-2.5 rounded-lg border border-slate-200/70 mt-1.5">
                                 <FormattedDescription description={scope.description} />
                               </div>
                             ) : (
@@ -843,14 +842,14 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
                               {scope.categories.map((c) => c.name).filter(Boolean).join(' • ')}
                             </div>
                           </td>
-                          <td className="py-3 px-2 text-center font-semibold text-slate-800">
+                          <td className="py-3.5 px-3 text-center font-bold text-slate-800 text-sm">
                             {scope.qty}
                           </td>
-                          <td className="py-3 px-2 text-center text-slate-600">{scope.unit}</td>
-                          <td className="py-3 px-3 text-right font-mono text-slate-500">
+                          <td className="py-3.5 px-3 text-center text-slate-600 font-medium">{scope.unit}</td>
+                          <td className="py-3.5 px-4 text-right font-mono font-semibold text-slate-600">
                             {formatMoney(suggestedPrice)}
                           </td>
-                          <td className="py-3 px-3">
+                          <td className="py-3.5 px-4">
                             <input
                               type="number"
                               dir="ltr"
@@ -870,91 +869,56 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
                                 );
                               }}
                               placeholder={formatMoney(suggestedPrice)}
-                              className="w-full px-2.5 py-1 text-xs font-mono font-bold text-left text-emerald-700 bg-emerald-50/50 border border-emerald-300 rounded focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                              className="w-full px-3 py-1.5 text-xs font-mono font-bold text-left text-emerald-700 bg-emerald-50/50 border border-emerald-300 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
                             />
                           </td>
-                          <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">
+                          <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900 text-sm">
                             {formatMoney(lineTotal)}
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
-                  </table>
+                </table>
+              </div>
+            </div>
+
+            {/* Financial Calculation Summary (Moved Down Below Table) */}
+            <div className="bg-slate-50/90 rounded-xl border border-slate-200 p-5 sm:p-6 space-y-5 shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-4 gap-3">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span>
+                    <span>Financial Summary &amp; Milestone Rates</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Consolidated subtotal, VAT calculation, and automated payment milestone schedule
+                  </p>
                 </div>
 
-                {/* Direct Commercial Notes Editor in Client Quotation Tab */}
-                <div className="bg-blue-50/40 rounded-xl border border-blue-200/90 p-4 space-y-2.5">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <label className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                      Commercial Notes &amp; Special Conditions (Printed on Client Quotation)
-                    </label>
-                    <span className="text-[10px] text-blue-700 font-bold bg-white px-2 py-0.5 rounded border border-blue-200">
-                      Syncs with Print &amp; Bottom Section
-                    </span>
-                  </div>
-                  <textarea
-                    rows={4}
-                    value={quote.notes}
-                    onChange={(e) => setQuote({ ...quote, notes: e.target.value })}
-                    placeholder="Enter special scope notes, market fluctuation conditions, sample approval remarks, site access requirements, or client instructions..."
-                    className="w-full p-3 text-xs bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed text-slate-800 font-normal"
-                  />
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] text-slate-500 font-semibold">Quick Presets:</span>
-                      <button
-                        type="button"
-                        onClick={() => setQuote((prev) => ({ ...prev, notes: DEFAULT_COMMERCIAL_CLAUSE }))}
-                        className="px-2.5 py-1 text-[11px] bg-blue-600 hover:bg-blue-700 text-white rounded font-medium cursor-pointer shadow-2xs transition-colors"
-                      >
-                        Market Fluctuation &amp; Delay Clause
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setQuote((prev) => ({
-                            ...prev,
-                            notes:
-                              '• Material Availability: Market availability is highly fluctuated; please decide promptly on existing materials with supplier re-check.\n• Approval Timeline: Delay in confirming shop drawings and finish samples will cause price adjustments according to current supplier rates.',
-                          }))
-                        }
-                        className="px-2 py-1 text-[11px] bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-300 font-medium cursor-pointer transition-colors"
-                      >
-                        Material &amp; Sample Notice
-                      </button>
-                    </div>
-                    {quote.notes && (
-                      <button
-                        type="button"
-                        onClick={() => setQuote((prev) => ({ ...prev, notes: '' }))}
-                        className="text-[11px] text-red-600 hover:text-red-800 font-medium cursor-pointer"
-                      >
-                        Clear Notes
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer shrink-0"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Preview &amp; Print Quotation</span>
+                </button>
               </div>
 
-              {/* Financial Calculation Summary Card */}
-              <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4 h-fit">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Financial Summary
-                </h4>
-
-                <div className="space-y-2.5 text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Subtotal:</span>
-                    <span className="font-mono font-semibold text-slate-900">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                {/* Left Card: Subtotal, VAT, Grand Total */}
+                <div className="lg:col-span-5 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                  <div className="flex justify-between text-xs text-slate-600">
+                    <span className="font-medium">Subtotal:</span>
+                    <span className="font-mono font-bold text-slate-900">
                       {formatMoney(totals.subtotal)} {quote.currency}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center text-slate-600">
+                  <div className="flex justify-between items-center text-xs text-slate-600">
                     <div className="flex items-center gap-1.5">
-                      <span>VAT:</span>
+                      <span className="font-medium">VAT:</span>
                       <input
                         type="number"
                         dir="ltr"
@@ -970,110 +934,136 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
                             vatPct: v === '' ? 0 : Math.max(0, parseFloat(v) || 0),
                           });
                         }}
-                        className="w-12 px-1.5 py-0.5 text-xs text-left font-mono bg-white border border-slate-300 rounded"
+                        className="w-14 px-2 py-0.5 text-xs text-left font-mono font-bold bg-slate-50 border border-slate-300 rounded focus:bg-white focus:ring-1 focus:ring-blue-500"
                       />
-                      <span>%</span>
+                      <span className="font-bold">%</span>
                     </div>
-                    <span className="font-mono font-semibold text-slate-900">
+                    <span className="font-mono font-bold text-slate-900">
                       {formatMoney(totals.vatAmount)} {quote.currency}
                     </span>
                   </div>
 
-                  <div className="border-t-2 border-slate-300 pt-3 flex justify-between items-baseline font-bold text-slate-900">
-                    <span className="text-sm">Grand Total:</span>
+                  <div className="border-t-2 border-slate-900 pt-2.5 flex justify-between items-baseline font-bold text-slate-900">
+                    <span className="text-sm uppercase tracking-wide">Grand Total:</span>
                     <div className="text-right">
-                      <span className="text-xl font-mono text-blue-700">
+                      <span className="text-xl sm:text-2xl font-mono text-blue-700 font-black">
                         {formatMoney(totals.grandTotal)}
                       </span>
-                      <span className="text-xs text-slate-500 ml-1 font-semibold">
+                      <span className="text-xs text-slate-500 ml-1.5 font-bold">
                         {quote.currency}
                       </span>
                     </div>
                   </div>
+                </div>
 
-                  {/* Payment Timeline Breakdown / Milestone Rates & Amounts */}
+                {/* Right Card: Payment Timeline Milestone Rates */}
+                <div className="lg:col-span-7 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                      Payment Timeline Milestone Schedule
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      Auto-Calculated Rates
+                    </span>
+                  </div>
+
                   {(() => {
                     const milestones = parsePaymentMilestones(quote.paymentTerms, totals.grandTotal);
                     return (
-                      <div className="mt-3 pt-3 border-t border-slate-200/90 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-amber-600" />
-                            Payment Timeline Amounts
-                          </span>
-                          <span className="text-[10px] font-semibold text-slate-400">
-                            Milestone Schedule
-                          </span>
-                        </div>
-                        <div className="bg-amber-50/70 border border-amber-200/80 rounded-lg p-2.5 space-y-1.5 text-xs">
-                          {milestones.map((m, idx) => (
-                            <div key={idx} className="flex justify-between items-center text-[11px]">
-                              <div className="flex items-center gap-1.5 pr-2 truncate">
-                                <span className="font-bold text-amber-950 font-mono shrink-0 bg-amber-200/70 border border-amber-300/80 px-1 py-0.2 rounded text-[10px]">
-                                  {m.percent}%
-                                </span>
-                                <span className="text-slate-800 font-medium truncate" title={m.label}>
-                                  {m.label}
-                                </span>
-                              </div>
-                              <span className="font-mono font-bold text-amber-950 shrink-0">
-                                {formatMoney(m.amount)} {quote.currency}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        {milestones.map((m, idx) => (
+                          <div
+                            key={idx}
+                            className="bg-amber-50/70 border border-amber-200/80 rounded-lg p-2.5 flex flex-col justify-between"
+                          >
+                            <div className="flex items-start gap-1.5 mb-1.5">
+                              <span className="font-bold text-amber-950 font-mono shrink-0 bg-amber-200/70 border border-amber-300/80 px-1.5 py-0.2 rounded text-[10px]">
+                                {m.percent}%
+                              </span>
+                              <span className="text-slate-800 font-semibold text-[11px] leading-snug line-clamp-2" title={m.label}>
+                                {m.label}
                               </span>
                             </div>
-                          ))}
-                        </div>
+                            <div className="text-right pt-1.5 border-t border-amber-200/70 font-mono font-bold text-amber-950 text-xs">
+                              {formatMoney(m.amount)} {quote.currency}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     );
                   })()}
-                </div>
 
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={handlePrint}
-                    className="w-full py-2.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
-                  >
-                    <Printer className="w-4 h-4" />
-                    Preview &amp; Print Quotation
-                  </button>
-                </div>
-
-                {/* Quick Commercial Notes & Terms Status in Tab 2 */}
-                <div className="pt-2 border-t border-slate-200 space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between text-slate-700 font-bold">
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-amber-600" />
-                      Commercial Terms on Print
-                    </span>
+                  <div className="flex flex-wrap items-center justify-between pt-1.5 border-t border-slate-100 text-[10.5px] text-slate-500 gap-2">
+                    <div>
+                      <span className="font-semibold text-slate-700">Completion Timeline:</span>{' '}
+                      <span>{quote.completionTerms || '20 Working Days'}</span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
                         document.getElementById('commercial-terms-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="text-[10.5px] text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                      className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
                     >
-                      Edit Below ↓
+                      Edit Contract Terms Below ↓
                     </button>
                   </div>
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-200 text-[11px] text-slate-600 space-y-1">
-                    <div>
-                      <span className="font-semibold text-slate-800">Payment: </span>
-                      {quote.paymentTerms ? quote.paymentTerms.split('\n')[0] : 'Standard terms'}
-                    </div>
-                    <div>
-                      <span className="font-semibold text-slate-800">Timeline: </span>
-                      <span className="truncate inline-block max-w-[200px] align-bottom">
-                        {quote.completionTerms || '20 Working Days'}
-                      </span>
-                    </div>
-                    {quote.notes && (
-                      <div className="truncate text-blue-800 font-medium">
-                        <span className="font-semibold">Notes: </span>
-                        {quote.notes}
-                      </div>
-                    )}
-                  </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Direct Commercial Notes Editor in Client Quotation Tab */}
+            <div className="bg-blue-50/40 rounded-xl border border-blue-200/90 p-4 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                  Commercial Notes &amp; Special Conditions (Printed on Client Quotation)
+                </label>
+                <span className="text-[10px] text-blue-700 font-bold bg-white px-2 py-0.5 rounded border border-blue-200">
+                  Syncs with Print &amp; Bottom Section
+                </span>
+              </div>
+              <textarea
+                rows={4}
+                value={quote.notes}
+                onChange={(e) => setQuote({ ...quote, notes: e.target.value })}
+                placeholder="Enter special scope notes, market fluctuation conditions, sample approval remarks, site access requirements, or client instructions..."
+                className="w-full p-3 text-xs bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed text-slate-800 font-normal"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] text-slate-500 font-semibold">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuote((prev) => ({ ...prev, notes: DEFAULT_COMMERCIAL_CLAUSE }))}
+                    className="px-2.5 py-1 text-[11px] bg-blue-600 hover:bg-blue-700 text-white rounded font-medium cursor-pointer shadow-2xs transition-colors"
+                  >
+                    Market Fluctuation &amp; Delay Clause
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuote((prev) => ({
+                        ...prev,
+                        notes:
+                          '• Material Availability: Market availability is highly fluctuated; please decide promptly on existing materials with supplier re-check.\n• Approval Timeline: Delay in confirming shop drawings and finish samples will cause price adjustments according to current supplier rates.',
+                      }))
+                    }
+                    className="px-2 py-1 text-[11px] bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-300 font-medium cursor-pointer transition-colors"
+                  >
+                    Material &amp; Sample Notice
+                  </button>
+                </div>
+                {quote.notes && (
+                  <button
+                    type="button"
+                    onClick={() => setQuote((prev) => ({ ...prev, notes: '' }))}
+                    className="text-[11px] text-red-600 hover:text-red-800 font-medium cursor-pointer"
+                  >
+                    Clear Notes
+                  </button>
+                )}
               </div>
             </div>
           </div>
