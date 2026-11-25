@@ -3,6 +3,33 @@ import { INITIAL_DATABASE } from '../data/seedData';
 
 const STORAGE_KEY = 'quotepro_app_db_v1';
 
+export const DEFAULT_COMPLETION_TIMELINE = 'The timeline will be explained in the contract.';
+export const DEFAULT_COMPANY_PHONE = '+97126504708';
+
+export function sanitizeCompletionTerms(value?: string): string {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return DEFAULT_COMPLETION_TIMELINE;
+  if (/^20\s+working\s+days\b/i.test(trimmed)) {
+    return DEFAULT_COMPLETION_TIMELINE;
+  }
+  return trimmed;
+}
+
+export function sanitizeCompanyPhone(value?: string): string {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return DEFAULT_COMPANY_PHONE;
+  const digitsOnly = trimmed.replace(/\s+/g, '');
+  if (
+    digitsOnly === '+97125501234' ||
+    digitsOnly === '97125501234' ||
+    digitsOnly === '+97126504708' ||
+    digitsOnly === '97126504708'
+  ) {
+    return DEFAULT_COMPANY_PHONE;
+  }
+  return trimmed;
+}
+
 export function loadDatabase(): AppDatabase {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -21,9 +48,14 @@ export function loadDatabase(): AppDatabase {
             logoUrl: parsed.settings?.logoUrl || INITIAL_DATABASE.settings.logoUrl,
             bankDetails: parsed.settings?.bankDetails || INITIAL_DATABASE.settings.bankDetails,
             paymentTerms: parsed.settings?.paymentTerms || INITIAL_DATABASE.settings.paymentTerms,
-            completionTerms: parsed.settings?.completionTerms || INITIAL_DATABASE.settings.completionTerms,
+            completionTerms: sanitizeCompletionTerms(
+              parsed.settings?.completionTerms || INITIAL_DATABASE.settings.completionTerms
+            ),
             defaultTerms: parsed.settings?.defaultTerms || INITIAL_DATABASE.settings.defaultTerms,
           };
+
+      mergedSettings.completionTerms = sanitizeCompletionTerms(mergedSettings.completionTerms);
+      mergedSettings.phone = sanitizeCompanyPhone(mergedSettings.phone);
 
       const isOldPaymentDuplicate = (notes?: string) =>
         Boolean(
@@ -40,7 +72,7 @@ export function loadDatabase(): AppDatabase {
         ...q,
         notes: isOldPaymentDuplicate(q.notes) ? INITIAL_DATABASE.settings.defaultNotes : q.notes,
         paymentTerms: q.paymentTerms || mergedSettings.paymentTerms,
-        completionTerms: q.completionTerms || mergedSettings.completionTerms,
+        completionTerms: sanitizeCompletionTerms(q.completionTerms || mergedSettings.completionTerms),
       }));
 
       const sanitizedDraft = parsed.draft
@@ -50,7 +82,9 @@ export function loadDatabase(): AppDatabase {
               ? INITIAL_DATABASE.settings.defaultNotes
               : parsed.draft.notes,
             paymentTerms: parsed.draft.paymentTerms || mergedSettings.paymentTerms,
-            completionTerms: parsed.draft.completionTerms || mergedSettings.completionTerms,
+            completionTerms: sanitizeCompletionTerms(
+              parsed.draft.completionTerms || mergedSettings.completionTerms
+            ),
           }
         : null;
 
@@ -80,6 +114,8 @@ export function loadDatabase(): AppDatabase {
         users: mergedUsers,
         currentUserId: parsed.currentUserId || INITIAL_DATABASE.currentUserId,
         printLogs: parsed.printLogs || [],
+        nextContract: parsed.nextContract || 1,
+        documentSuites: Array.isArray(parsed.documentSuites) ? parsed.documentSuites : [],
       };
     }
   } catch (error) {
@@ -130,7 +166,7 @@ export function exportDatabaseBackup(db: AppDatabase): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `quotepro-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.download = `docusuit-v2-backup-${new Date().toISOString().split('T')[0]}.json`;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => {

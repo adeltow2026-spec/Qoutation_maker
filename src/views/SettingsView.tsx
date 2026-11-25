@@ -1,22 +1,32 @@
 import React, { useState, useRef } from 'react';
-import { CompanySettings, BankDetails } from '../types';
+import { CompanySettings, BankDetails, ContractTermsConfig, UaeHolidayItem } from '../types';
+import {
+  DEFAULT_CONTRACT_TERMS,
+  DEFAULT_UAE_PUBLIC_HOLIDAYS,
+  MANAGEMENT_ADMIN_EMAIL,
+} from '../utils/documentSuite';
 import {
   Building2,
+  Calendar,
   Percent,
+  Plus,
   Save,
   RotateCcw,
   Landmark,
   Clock,
   FileCheck2,
   Upload,
-  Image as ImageIcon,
   Trash2,
   Users,
   UserCheck,
+  FileSignature,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface SettingsViewProps {
   settings: CompanySettings;
+  canEditContractLocks?: boolean;
   onSaveSettings: (settings: CompanySettings) => void;
   onResetAllData: () => void;
   onOpenUserModal?: () => void;
@@ -24,13 +34,67 @@ interface SettingsViewProps {
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
+  canEditContractLocks = false,
   onSaveSettings,
   onResetAllData,
   onOpenUserModal,
 }) => {
   const [formData, setFormData] = useState<CompanySettings>(settings);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [newHolidayDate, setNewHolidayDate] = useState('');
+  const [newHolidayName, setNewHolidayName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uaeHolidays: UaeHolidayItem[] = Array.isArray(formData.uaePublicHolidays)
+    ? formData.uaePublicHolidays
+    : DEFAULT_UAE_PUBLIC_HOLIDAYS;
+
+  const handleAddHoliday = () => {
+    if (!newHolidayDate || !newHolidayName.trim()) return;
+    const item: UaeHolidayItem = {
+      id: 'hol_' + Math.random().toString(36).substring(2, 8) + Date.now().toString(36),
+      date: newHolidayDate,
+      name: newHolidayName.trim(),
+    };
+    const next = [...uaeHolidays, item].sort((a, b) => a.date.localeCompare(b.date));
+    setFormData((prev) => ({ ...prev, uaePublicHolidays: next }));
+    setNewHolidayDate('');
+    setNewHolidayName('');
+  };
+
+  const handleRemoveHoliday = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      uaePublicHolidays: uaeHolidays.filter((h) => h.id !== id),
+    }));
+  };
+
+  const handleResetHolidays = () => {
+    setFormData((prev) => ({
+      ...prev,
+      uaePublicHolidays: [...DEFAULT_UAE_PUBLIC_HOLIDAYS],
+    }));
+  };
+
+  const contractDefaults: ContractTermsConfig = {
+    ...DEFAULT_CONTRACT_TERMS,
+    ...(formData.contractDefaults || {}),
+  };
+
+  const handleContractDefaultChange = <K extends keyof ContractTermsConfig>(
+    field: K,
+    value: ContractTermsConfig[K]
+  ) => {
+    if (!canEditContractLocks) return;
+    setFormData((prev) => ({
+      ...prev,
+      contractDefaults: {
+        ...DEFAULT_CONTRACT_TERMS,
+        ...(prev.contractDefaults || {}),
+        [field]: value,
+      },
+    }));
+  };
 
   const bank: BankDetails = formData.bankDetails || {
     accountName: 'Touch of Wood Decoration Works LLC',
@@ -211,7 +275,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+971 2 550 1234"
+                placeholder="+97126504708"
                 className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
               />
             </div>
@@ -251,6 +315,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="Musaffah ICAD, Abu Dhabi, UAE"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Authorized Signatory Name (Contracts &amp; Certificates)
+              </label>
+              <input
+                type="text"
+                value={formData.authorizedSignatoryName || ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, authorizedSignatoryName: e.target.value })
+                }
+                placeholder="e.g. Adel"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Authorized Signatory Position / Title
+              </label>
+              <input
+                type="text"
+                value={formData.authorizedSignatoryTitle || ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, authorizedSignatoryTitle: e.target.value })
+                }
+                placeholder="e.g. Managing Director"
                 className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
               />
             </div>
@@ -544,7 +638,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 rows={3}
                 value={formData.completionTerms || ''}
                 onChange={(e) => setFormData({ ...formData, completionTerms: e.target.value })}
-                placeholder="20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions."
+                placeholder="The timeline will be explained in the contract."
                 className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed"
               />
             </div>
@@ -595,6 +689,188 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               className="w-full p-3 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 leading-relaxed"
             />
           </div>
+        </section>
+
+        {/* Document Suite Contract Fixed Fees & Warranty Defaults (Admin-Only) */}
+        <section className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-slate-900 text-amber-300 rounded-lg">
+                <FileSignature className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  Contract Fixed Fees &amp; Warranty Defaults (NOV Version)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Pre-fills all new Contracts &amp; Sample Confirmations. Protected by Admin permission.
+                </p>
+              </div>
+            </div>
+
+            {canEditContractLocks ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700">
+                  <ShieldCheck className="w-4 h-4" />
+                  Management Unlocked ({MANAGEMENT_ADMIN_EMAIL})
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      contractDefaults: { ...DEFAULT_CONTRACT_TERMS },
+                    }))
+                  }
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Restore NOV Defaults
+                </button>
+              </div>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-800">
+                <Lock className="w-3.5 h-3.5" />
+                Locked — Management Only ({MANAGEMENT_ADMIN_EMAIL})
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
+            {(
+              [
+                { key: 'warrantyYears', label: 'Workmanship Warranty (Years)' },
+                { key: 'clientSuppliedMarkupPct', label: 'Client-Supplied Markup (%)' },
+                { key: 'additionalRevisionFee', label: 'Extra 2D Revision Fee (AED)' },
+                { key: 'extraSampleSessionFee', label: 'Sample Session Fee (AED)' },
+                { key: 'extraCustomSampleFee', label: 'Custom Sample Fee (AED)' },
+                { key: 'sampleSiteDeliveryFee', label: 'Sample Site Delivery (AED)' },
+                { key: 'postAcceptanceCalloutFee', label: 'Site Call-Out Fee (AED)' },
+                { key: 'abortedSiteVisitFee', label: 'Standby Daily Rate (AED/day)' },
+                { key: 'factoryStorageFreeDays', label: 'Free Storage Grace (Days)' },
+                { key: 'factoryStorageDailyFee', label: 'Storage Daily Fee (AED/day)' },
+                { key: 'voScopeCeiling', label: 'Minor VO Ceiling (AED)' },
+                { key: 'cancellationFeePct', label: 'Cancellation Admin Fee (%)' },
+                { key: 'liabilityCapPct', label: 'Liability Cap (%)' },
+                { key: 'stage1Pct', label: 'Default Stage 1 Advance (%)' },
+                { key: 'stage2Pct', label: 'Default Stage 2 Progress (%)' },
+                { key: 'stage3Pct', label: 'Default Stage 3 Final (%)' },
+              ] as Array<{ key: keyof ContractTermsConfig; label: string }>
+            ).map((field) => {
+              const val = Number(contractDefaults[field.key] ?? 0);
+              return (
+                <div key={field.key}>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    {field.label}
+                  </label>
+                  <input
+                    type="number"
+                    dir="ltr"
+                    min="0"
+                    step="any"
+                    disabled={!canEditContractLocks}
+                    value={val === 0 ? '' : val}
+                    placeholder="0"
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      handleContractDefaultChange(
+                        field.key,
+                        (raw === '' ? 0 : Math.max(0, parseFloat(raw) || 0)) as never
+                      );
+                    }}
+                    className={`w-full px-3 py-2 text-xs font-mono tabular-nums rounded-lg border focus:outline-none ${
+                      canEditContractLocks
+                        ? 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-slate-900'
+                        : 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                    }`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* UAE Public Holidays Calendar (Clause 6.1 Working-Day Calculation) */}
+        <section className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-50 text-emerald-700 rounded-lg">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  UAE Public Holidays (Working-Day Calendar)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Contract timelines count Monday–Saturday working days (Clause 6.1), automatically skipping Sundays and the UAE holidays below.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleResetHolidays}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset UAE Defaults
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            <input
+              type="date"
+              value={newHolidayDate}
+              onChange={(e) => setNewHolidayDate(e.target.value)}
+              className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-600 focus:outline-none sm:w-44"
+            />
+            <input
+              type="text"
+              value={newHolidayName}
+              onChange={(e) => setNewHolidayName(e.target.value)}
+              placeholder="Holiday name (e.g. Eid Al Fitr Day 1, UAE National Day...)"
+              className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-600 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleAddHoliday}
+              disabled={!newHolidayDate || !newHolidayName.trim()}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Holiday
+            </button>
+          </div>
+
+          {uaeHolidays.length === 0 ? (
+            <p className="text-xs text-slate-400 italic">
+              No public holidays listed — only Sundays will be excluded when calculating working days.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
+              {uaeHolidays.map((h) => (
+                <div
+                  key={h.id}
+                  className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/70 text-xs"
+                >
+                  <div className="min-w-0">
+                    <div className="font-mono font-bold text-slate-800 text-[11px]">{h.date}</div>
+                    <div className="text-slate-600 truncate" title={h.name}>
+                      {h.name}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveHoliday(h.id)}
+                    title="Remove holiday"
+                    className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Action Controls */}

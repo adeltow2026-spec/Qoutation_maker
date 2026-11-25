@@ -9,6 +9,7 @@ import {
 } from '../utils/formatters';
 import { Landmark, Clock, FileCheck2, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 import { FormattedDescription } from './FormattedDescription';
+import officialMainLogo from '../assets/images/touch_of_wood_logo_1788191099643.png';
 
 interface PrintQuotationProps {
   quotation: Quotation;
@@ -27,20 +28,25 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
   showTerms = true,
   showPhotos = true,
 }) => {
-  const [logoSrc, setLogoSrc] = useState<string>(
-    settings.logoUrl || '/touch_of_wood_logo.jpg'
-  );
+  const resolveInitialLogo = (url?: string) => {
+    if (!url || url === '/touch_of_wood_logo.jpg' || url === '/logo.jpg') {
+      return officialMainLogo;
+    }
+    return url;
+  };
+
+  const [logoSrc, setLogoSrc] = useState<string>(resolveInitialLogo(settings.logoUrl));
   const [hasLogoError, setHasLogoError] = useState<boolean>(false);
 
   useEffect(() => {
-    setLogoSrc(settings.logoUrl || '/touch_of_wood_logo.jpg');
+    setLogoSrc(resolveInitialLogo(settings.logoUrl));
     setHasLogoError(false);
   }, [settings.logoUrl]);
 
   const handleLogoError = () => {
-    // If the configured logo failed, try alternative uploaded logo names
-    if (logoSrc !== '/logo.jpg') {
-      setLogoSrc('/logo.jpg');
+    // If a custom configured logo failed, fall back cleanly to the bundled official logo
+    if (logoSrc !== officialMainLogo) {
+      setLogoSrc(officialMainLogo);
     } else if (logoSrc !== '/touch_of_wood_logo.jpg') {
       setLogoSrc('/touch_of_wood_logo.jpg');
     } else {
@@ -65,7 +71,7 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
   const completionSchedule = (
     quotation.completionTerms ||
     settings.completionTerms ||
-    '20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.'
+    'The timeline will be explained in the contract.'
   ).trim();
 
   const termsList = (
@@ -99,9 +105,9 @@ export const PrintQuotation: React.FC<PrintQuotationProps> = ({
       {/* Letterhead Header */}
       <div className="flex justify-between items-start border-b-2 border-amber-900/40 pb-5 mb-6 print-avoid-break">
         <div className="flex items-start gap-4">
-          {/* Company Official Logo */}
+          {/* Company Official Logo (1.6x Enlarged) */}
           {!hasLogoError && logoSrc ? (
-            <div className="h-20 w-24 sm:h-22 sm:w-28 flex-shrink-0 flex items-center justify-center p-1 bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
+            <div className="h-32 w-40 sm:h-36 sm:w-44 flex-shrink-0 flex items-center justify-center p-1 bg-white overflow-hidden">
               <img
                 src={logoSrc}
                 alt={settings.name || 'Touch Of Wood'}

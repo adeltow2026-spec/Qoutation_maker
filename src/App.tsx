@@ -7,6 +7,7 @@ import {
   CompanySettings,
   UserProfile,
   PrintAuditLog,
+  ProjectDocumentSuite,
 } from './types';
 import {
   loadDatabase,
@@ -14,12 +15,19 @@ import {
   fetchServerDatabase,
   saveServerDatabase,
   exportDatabaseBackup,
+  sanitizeCompletionTerms,
+  sanitizeCompanyPhone,
 } from './utils/storage';
 import {
   generateQuoteNumber,
   createBlankScope,
   calculateQuotationTotals,
 } from './utils/formatters';
+import {
+  createDocumentSuiteFromQuotation,
+  canEditLockedContractTerms,
+  getLinkedQuotationIds,
+} from './utils/documentSuite';
 import { Sidebar, PageId } from './components/Sidebar';
 import { Header } from './components/Header';
 import { ToastContainer, ToastMessage } from './components/Toast';
@@ -29,10 +37,15 @@ import { UserModal } from './components/UserModal';
 import { LoginScreen } from './components/LoginScreen';
 import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
 import { PrintPreviewModal } from './components/PrintPreviewModal';
+import {
+  DocumentSuitePrintModal,
+  PrintableSuiteTarget,
+} from './components/DocumentSuitePrintModal';
 import { ConfirmModal } from './components/ConfirmModal';
 import { DashboardView } from './views/DashboardView';
 import { QuotationEditorView } from './views/QuotationEditorView';
 import { QuotationsListView } from './views/QuotationsListView';
+import { DocumentSuiteView } from './views/DocumentSuiteView';
 import { CustomersView } from './views/CustomersView';
 import { ProductsView } from './views/ProductsView';
 import { ReportsView } from './views/ReportsView';
@@ -207,7 +220,7 @@ export default function App() {
         '1. 60% Advance Payment along with signed quotation & order confirmation\n2. 30% Upon completion of factory joinery fabrication & progressive painting\n3. 10% Prior to final site delivery and handover',
       completionTerms:
         db.settings.completionTerms ||
-        '20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.',
+        'The timeline will be explained in the contract.',
       terms: db.settings.defaultTerms || '',
       scopes: initialScopes,
       subtotal: initialTotals.subtotal,
@@ -226,6 +239,13 @@ export default function App() {
 
   // Print view state
   const [printingQuote, setPrintingQuote] = useState<Quotation | null>(null);
+
+  // Document Suite state
+  const [initialActiveSuiteId, setInitialActiveSuiteId] = useState<string | null>(null);
+  const [printingSuite, setPrintingSuite] = useState<{
+    suite: ProjectDocumentSuite;
+    target: PrintableSuiteTarget;
+  } | null>(null);
 
   // Auto-sync with central server across all devices
   const isServerInitialized = React.useRef(false);
@@ -272,25 +292,62 @@ export default function App() {
             return tB - tA;
           });
 
+          // Merge document suites across devices by id & updatedAt
+          const serverSuites = Array.isArray(serverDb.documentSuites) ? serverDb.documentSuites : [];
+          const localSuites = Array.isArray(prevLocal.documentSuites) ? prevLocal.documentSuites : [];
+          const suiteMap = new Map<string, ProjectDocumentSuite>();
+          serverSuites.forEach((s) => suiteMap.set(s.id, s));
+          localSuites.forEach((ls) => {
+            const ss = suiteMap.get(ls.id);
+            if (!ss) {
+              suiteMap.set(ls.id, ls);
+            } else {
+              const lsTime = new Date(ls.updatedAt || 0).getTime();
+              const ssTime = new Date(ss.updatedAt || 0).getTime();
+              if (lsTime > ssTime) {
+                suiteMap.set(ls.id, ls);
+              }
+            }
+          });
+          const mergedSuites = Array.from(suiteMap.values()).sort((a, b) => {
+            const tA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+            const tB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+            return tB - tA;
+          });
+
           // Check if server data actually has any differences before returning a new state object
           if (isServerInitialized.current) {
             const sameQuotes =
               mergedQuotes.length === (prevLocal.quotes?.length || 0) &&
               (mergedQuotes[0]?.id === prevLocal.quotes?.[0]?.id) &&
               (mergedQuotes[0]?.updatedAt === prevLocal.quotes?.[0]?.updatedAt);
+            const sameSuites =
+              mergedSuites.length === (prevLocal.documentSuites?.length || 0) &&
+              (mergedSuites[0]?.id === prevLocal.documentSuites?.[0]?.id) &&
+              (mergedSuites[0]?.updatedAt === prevLocal.documentSuites?.[0]?.updatedAt);
             const sameUsers =
               (serverDb.users?.length || 0) === (prevLocal.users?.length || 0);
             const sameLibrary =
               (serverDb.library?.length || 0) === (prevLocal.library?.length || 0);
 
-            if (sameQuotes && sameUsers && sameLibrary) {
+            if (sameQuotes && sameSuites && sameUsers && sameLibrary) {
               return prevLocal; // No changes! Keep same object reference so React does not trigger child re-renders!
             }
           }
 
           const updatedDb = {
             ...serverDb,
-            quotes: mergedQuotes,
+            settings: {
+              ...serverDb.settings,
+              phone: sanitizeCompanyPhone(serverDb.settings.phone),
+              completionTerms: sanitizeCompletionTerms(serverDb.settings.completionTerms),
+            },
+            quotes: mergedQuotes.map((q) => ({
+              ...q,
+              completionTerms: sanitizeCompletionTerms(q.completionTerms),
+            })),
+            documentSuites: mergedSuites,
+            nextContract: Math.max(serverDb.nextContract || 1, prevLocal.nextContract || 1),
             currentUserId: currentLocalUserId || serverDb.currentUserId,
           };
 
@@ -595,6 +652,87 @@ export default function App() {
     });
   };
 
+  // Document Suite Management
+  const handleSaveDocumentSuite = (suiteToSave: ProjectDocumentSuite, isNew?: boolean) => {
+    setDb((prev) => {
+      const existingList = prev.documentSuites || [];
+      const idx = existingList.findIndex((s) => s.id === suiteToSave.id);
+      const updatedSuites = [...existingList];
+      if (idx >= 0) {
+        updatedSuites[idx] = suiteToSave;
+      } else {
+        updatedSuites.unshift(suiteToSave);
+      }
+
+      const nextDb: AppDatabase = {
+        ...prev,
+        documentSuites: updatedSuites,
+        nextContract: isNew || idx < 0 ? (prev.nextContract || 1) + 1 : prev.nextContract || 1,
+      };
+      saveDatabase(nextDb);
+      saveServerDatabase(nextDb);
+      return nextDb;
+    });
+
+    if (isNew) {
+      addToast('success', 'Document Suite Created', suiteToSave.contract.contractNo);
+    }
+  };
+
+  const handleDeleteDocumentSuite = (suiteId: string) => {
+    const target = (db.documentSuites || []).find((s) => s.id === suiteId);
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Project Document Suite?',
+      message: `Remove "${target?.projectTitle || target?.contract.contractNo || 'this project suite'}" including all its Sample Confirmations, VOs, Finish Certificates, and Progress Reports?`,
+      confirmText: 'Delete Suite',
+      confirmVariant: 'danger',
+      onConfirm: () => {
+        setDb((prev) => {
+          const nextDb: AppDatabase = {
+            ...prev,
+            documentSuites: (prev.documentSuites || []).filter((s) => s.id !== suiteId),
+          };
+          saveDatabase(nextDb);
+          saveServerDatabase(nextDb);
+          return nextDb;
+        });
+        addToast('info', 'Document Suite Deleted', target?.contract.contractNo);
+      },
+    });
+  };
+
+  const handleOpenOrCreateSuiteFromQuote = (quote: Quotation) => {
+    const existing = (db.documentSuites || []).find((s) =>
+      getLinkedQuotationIds(s).includes(quote.id)
+    );
+    if (existing) {
+      setInitialActiveSuiteId(existing.id);
+      setCurrentPage('documents');
+      addToast('info', 'Opened Linked Document Suite', existing.contract.contractNo);
+      return;
+    }
+
+    const cust = db.customers.find((c) => c.id === quote.customerId);
+    const created = createDocumentSuiteFromQuotation(
+      quote,
+      cust,
+      db.settings,
+      db.nextContract || 1,
+      currentUser
+    );
+    handleSaveDocumentSuite(created, true);
+    setInitialActiveSuiteId(created.id);
+    setCurrentPage('documents');
+  };
+
+  const handlePrintDocumentSuite = (
+    suite: ProjectDocumentSuite,
+    target: PrintableSuiteTarget
+  ) => {
+    setPrintingSuite({ suite, target });
+  };
+
   // Trigger Print
   const handlePrintQuote = (quote: Quotation) => {
     setPrintingQuote(quote);
@@ -626,7 +764,7 @@ export default function App() {
       <div
         id="app-root-shell"
         className={`flex min-h-screen bg-slate-100 text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] ${
-          printingQuote ? 'no-print' : ''
+          printingQuote || printingSuite ? 'no-print' : ''
         }`}
       >
       {/* Sidebar Navigation */}
@@ -637,6 +775,7 @@ export default function App() {
         onClose={() => setIsSidebarOpen(false)}
         draftCount={db.draft ? 1 : 0}
         quotesCount={db.quotes.length}
+        documentSuitesCount={(db.documentSuites || []).length}
         productsCount={db.library.length}
         customersCount={db.customers.length}
         logoUrl={db.settings.logoUrl}
@@ -714,6 +853,11 @@ export default function App() {
             <QuotationsListView
               quotes={db.quotes}
               customers={db.customers}
+              linkedQuoteIds={
+                new Set(
+                  (db.documentSuites || []).flatMap((s) => getLinkedQuotationIds(s))
+                )
+              }
               onNewQuotation={() => {
                 setActiveQuotation(createNewEmptyQuote());
                 setCurrentPage('new');
@@ -722,6 +866,23 @@ export default function App() {
               onDuplicateQuote={handleDuplicateQuote}
               onDeleteQuote={handleDeleteQuote}
               onPrintQuote={handlePrintQuote}
+              onCreateDocumentSuite={handleOpenOrCreateSuiteFromQuote}
+            />
+          )}
+
+          {currentPage === 'documents' && (
+            <DocumentSuiteView
+              suites={db.documentSuites || []}
+              quotes={db.quotes}
+              customers={db.customers}
+              settings={db.settings}
+              currentUser={currentUser}
+              nextContractSeq={db.nextContract || 1}
+              initialActiveSuiteId={initialActiveSuiteId}
+              onClearInitialSuite={() => setInitialActiveSuiteId(null)}
+              onSaveSuite={handleSaveDocumentSuite}
+              onDeleteSuite={handleDeleteDocumentSuite}
+              onPrintDocument={handlePrintDocumentSuite}
             />
           )}
 
@@ -775,6 +936,7 @@ export default function App() {
           {currentPage === 'settings' && (
             <SettingsView
               settings={db.settings}
+              canEditContractLocks={canEditLockedContractTerms(currentUser)}
               onSaveSettings={handleSaveSettings}
               onResetAllData={handleResetAllData}
               onOpenUserModal={() => setUserModalOpen(true)}
@@ -833,6 +995,16 @@ export default function App() {
         currentUser={currentUser}
         onRecordPrintLog={handleRecordPrintLog}
         onClose={closePrintModal}
+      />
+    )}
+
+    {/* Document Suite Print / PDF Fullscreen Modal Overlay */}
+    {printingSuite && (
+      <DocumentSuitePrintModal
+        suite={printingSuite.suite}
+        target={printingSuite.target}
+        settings={db.settings}
+        onClose={() => setPrintingSuite(null)}
       />
     )}
 

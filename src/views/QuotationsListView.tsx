@@ -1,26 +1,30 @@
 import React, { useState, useMemo } from 'react';
 import { Quotation, Customer } from '../types';
 import { formatMoney } from '../utils/formatters';
-import { Search, Plus, Printer, Edit, Trash2, Copy, FileText, ExternalLink } from 'lucide-react';
+import { Search, Plus, Printer, Trash2, Copy, FileText, ExternalLink, FileSignature } from 'lucide-react';
 
 interface QuotationsListViewProps {
   quotes: Quotation[];
   customers: Customer[];
+  linkedQuoteIds?: Set<string>;
   onNewQuotation: () => void;
   onOpenQuote: (quote: Quotation) => void;
   onDuplicateQuote: (quote: Quotation) => void;
   onDeleteQuote: (id: string) => void;
   onPrintQuote: (quote: Quotation) => void;
+  onCreateDocumentSuite?: (quote: Quotation) => void;
 }
 
 export const QuotationsListView: React.FC<QuotationsListViewProps> = ({
   quotes,
   customers,
+  linkedQuoteIds,
   onNewQuotation,
   onOpenQuote,
   onDuplicateQuote,
   onDeleteQuote,
   onPrintQuote,
+  onCreateDocumentSuite,
 }) => {
   const [search, setSearch] = useState('');
 
@@ -135,6 +139,24 @@ export const QuotationsListView: React.FC<QuotationsListViewProps> = ({
                           >
                             Open
                           </button>
+                          {onCreateDocumentSuite && (
+                            <button
+                              type="button"
+                              onClick={() => onCreateDocumentSuite(q)}
+                              title={
+                                linkedQuoteIds?.has(q.id)
+                                  ? 'Open Linked Project Document Suite'
+                                  : 'Create Contract & Document Suite from Quote'
+                              }
+                              className={`p-1.5 rounded transition-colors cursor-pointer ${
+                                linkedQuoteIds?.has(q.id)
+                                  ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+                                  : 'text-slate-500 hover:text-amber-700 hover:bg-amber-50'
+                              }`}
+                            >
+                              <FileSignature className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => onPrintQuote(q)}

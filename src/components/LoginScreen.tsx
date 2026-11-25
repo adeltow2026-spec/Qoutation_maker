@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserProfile, CompanySettings } from '../types';
-import { Lock, Mail, ShieldCheck, ArrowRight, Eye, EyeOff, AlertCircle, Building2 } from 'lucide-react';
+import { Lock, Mail, ShieldCheck, ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import officialMainLogo from '../assets/images/touch_of_wood_logo_1788191099643.png';
 
 interface LoginScreenProps {
   users: UserProfile[];
@@ -84,22 +85,27 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden relative z-10">
         {/* Brand Header */}
         <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 p-6 text-white text-center border-b border-slate-800">
-          <div className="w-14 h-14 mx-auto mb-3 rounded-xl bg-white/10 backdrop-blur-md p-1 border border-white/20 flex items-center justify-center shadow-inner">
-            {settings.logoUrl ? (
-              <img
-                src={settings.logoUrl}
-                alt={settings.name}
-                className="max-h-full max-w-full object-contain rounded"
-              />
-            ) : (
-              <Building2 className="w-7 h-7 text-amber-400" />
-            )}
+          <div className="w-24 h-24 mx-auto mb-3 rounded-2xl bg-white p-2 border border-white/30 flex items-center justify-center shadow-lg">
+            <img
+              src={
+                !settings.logoUrl ||
+                settings.logoUrl === '/touch_of_wood_logo.jpg' ||
+                settings.logoUrl === '/logo.jpg'
+                  ? officialMainLogo
+                  : settings.logoUrl
+              }
+              alt={settings.name}
+              className="max-h-full max-w-full object-contain"
+            />
           </div>
-          <h1 className="text-base font-extrabold tracking-wide uppercase">
-            Touch Of Wood
-          </h1>
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-lg font-extrabold tracking-wide">DocuSuit</h1>
+            <span className="px-2 py-0.5 text-[10px] font-black tracking-wider uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-400/40">
+              V2
+            </span>
+          </div>
           <p className="text-xs text-slate-300 font-medium mt-0.5">
-            Estimation &amp; Quotation Management Portal
+            Touch Of Wood — Contracts, Quotations &amp; Documentation Suite
           </p>
           <div className="inline-flex items-center gap-1.5 mt-2.5 px-2.5 py-0.5 rounded-full bg-white/10 text-[10px] text-amber-300 font-semibold border border-white/15">
             <ShieldCheck className="w-3 h-3 text-emerald-400" /> Secure Staff Portal
@@ -168,7 +174,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <span>Authenticating...</span>
             ) : (
               <>
-                <span>Sign In to Estimator Portal</span>
+                <span>Sign In to DocuSuit V2</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

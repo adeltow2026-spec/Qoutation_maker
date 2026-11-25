@@ -139,6 +139,34 @@
     break-after: page !important;
     page-break-after: always !important;
   }
+
+  /* 7. Exact full-bleed A4 sheet pagination for Document Suite (header + footer pinned on every page) */
+  .doc-suite-a4-root {
+    page: suite-a4;
+    gap: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .a4-sheet {
+    width: 210mm !important;
+    min-height: 296.5mm !important;
+    max-width: 210mm !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  .a4-page-break {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
 }
+
+@page suite-a4 {
+  size: A4 portrait;
+  margin: 0;
+}
+
 
 

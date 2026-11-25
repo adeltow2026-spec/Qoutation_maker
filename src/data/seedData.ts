@@ -173,7 +173,7 @@ export const INITIAL_DATABASE: AppDatabase = {
     name: 'Touch Of Wood Decoration Works LLC',
     logoText: 'TOUCH OF WOOD',
     logoUrl: '/touch_of_wood_logo.jpg',
-    phone: '+971 2 550 1234',
+    phone: '+97126504708',
     email: 'tow@touchofwood.ae',
     address: 'Musaffah ICAD, Abu Dhabi, UAE',
     trn: '100519825200003',
@@ -182,8 +182,7 @@ export const INITIAL_DATABASE: AppDatabase = {
     currency: 'AED',
     overheadPct: 30,
     markupPct: 40,
-    completionTerms:
-      '20 Working Days from the date of Advance Payment, after all measurements are taken from the site and approved Drawings.',
+    completionTerms: 'The timeline will be explained in the contract.',
     paymentTerms:
       '• 60% in advance along with the order confirmation\n• 30% progressive painting works\n• 10% progressive bill prior delivery',
     bankDetails: {
@@ -202,7 +201,7 @@ export const INITIAL_DATABASE: AppDatabase = {
 4. Excluded All civil works.
 5. We should have 24/7 access to the project site and our team should be allowed to work at all hours.
 6. The above proposal includes Supply and Installations.
-7. Quotation Include Only Walnut, Oak, Ash, Beach Veneer and Another Select Veneer Extra Charge as per sample.
+7. Quotation Include Only Walnut, Oak, Ash, Beech Veneer and Another Select Veneer Extra Charge as per sample.
 8. All Electrical Work Extra Charge as per Site Condition.
 9. Charging for delivery Sample and Pickup Sample (200 AED).
 10. The accountability of the approval laminate sheet is on the client. Sample has to be confirmed for this work.
@@ -232,7 +231,7 @@ export const INITIAL_DATABASE: AppDatabase = {
       id: 'u-2',
       name: 'Touch Of Wood Sales Team',
       email: 'tow@touchofwood.ae',
-      phone: '+971 2 550 1234',
+      phone: '+97126504708',
       role: 'Commercial Estimating Team',
       avatarInitials: 'TOW',
       password: 'Tow@123',
@@ -242,7 +241,7 @@ export const INITIAL_DATABASE: AppDatabase = {
       id: 'u-3',
       name: 'Senior Project Estimator',
       email: 'projects@touchofwood.ae',
-      phone: '+971 2 550 1234',
+      phone: '+97126504708',
       role: 'Joinery & Fit-out Specialist',
       avatarInitials: 'PE',
       password: 'Tow@123',

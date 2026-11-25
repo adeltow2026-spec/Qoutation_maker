@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Customer } from '../types';
-import { UserPlus, X, Building2, Phone, Mail, MapPin, Hash } from 'lucide-react';
+import { X, Building2, Phone, Mail, Hash, CreditCard } from 'lucide-react';
 
 interface CustomerModalProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [trn, setTrn] = useState('');
+  const [emiratesId, setEmiratesId] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
 
@@ -30,6 +31,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       setPhone(customerToEdit.phone || '');
       setAddress(customerToEdit.address || '');
       setTrn(customerToEdit.trn || '');
+      setEmiratesId(customerToEdit.emiratesId || '');
       setNotes(customerToEdit.notes || '');
     } else {
       setName('');
@@ -37,6 +39,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       setPhone('');
       setAddress('');
       setTrn('');
+      setEmiratesId('');
       setNotes('');
     }
     setError('');
@@ -57,6 +60,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         phone: phone.trim() || undefined,
         address: address.trim(),
         trn: trn.trim() || undefined,
+        emiratesId: emiratesId.trim() || undefined,
         notes: notes.trim() || undefined,
       },
       customerToEdit ? customerToEdit.id : undefined
@@ -144,19 +148,37 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              TRN / Tax Number
-            </label>
-            <div className="relative">
-              <Hash className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={trn}
-                onChange={(e) => setTrn(e.target.value)}
-                placeholder="e.g. 100234567800003"
-                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                TRN / Tax Number
+              </label>
+              <div className="relative">
+                <Hash className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={trn}
+                  onChange={(e) => setTrn(e.target.value)}
+                  placeholder="e.g. 100234567800003"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Emirates ID (For Contracts)
+              </label>
+              <div className="relative">
+                <CreditCard className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={emiratesId}
+                  onChange={(e) => setEmiratesId(e.target.value)}
+                  placeholder="784-XXXX-XXXXXXX-X"
+                  className="w-full pl-9 pr-3 py-2 text-sm font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                />
+              </div>
             </div>
           </div>
 

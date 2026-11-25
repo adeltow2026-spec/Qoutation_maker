@@ -111,7 +111,7 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
       completionTerms:
         sourceQuote.completionTerms ??
         settings.completionTerms ??
-        '20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.',
+        'The timeline will be explained in the contract.',
       terms: sourceQuote.terms ?? settings.defaultTerms ?? '',
     };
   };
@@ -997,7 +997,7 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
                   <div className="flex flex-wrap items-center justify-between pt-1.5 border-t border-slate-100 text-[10.5px] text-slate-500 gap-2">
                     <div>
                       <span className="font-semibold text-slate-700">Completion Timeline:</span>{' '}
-                      <span>{quote.completionTerms || '20 Working Days'}</span>
+                      <span>{quote.completionTerms || 'The timeline will be explained in the contract.'}</span>
                     </div>
                     <button
                       type="button"
@@ -1098,7 +1098,7 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
                   '1. 60% Advance Payment along with signed quotation & order confirmation\n2. 30% Upon completion of factory joinery fabrication & progressive painting\n3. 10% Prior to final site delivery and handover',
                 completionTerms:
                   settings.completionTerms ||
-                  '20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions.',
+                  'The timeline will be explained in the contract.',
                 notes: settings.defaultNotes || prev.notes,
                 terms: settings.defaultTerms || prev.terms,
               }));
@@ -1279,7 +1279,7 @@ export const QuotationEditorView: React.FC<QuotationEditorViewProps> = ({
               type="text"
               value={quote.completionTerms || ''}
               onChange={(e) => setQuote({ ...quote, completionTerms: e.target.value })}
-              placeholder="e.g. 20 Working Days from receipt of Advance Payment, approved shop drawings, and final site dimensions."
+              placeholder="The timeline will be explained in the contract."
               className="w-full px-3 py-2 text-xs bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 text-slate-800 font-medium"
             />
           </div>

@@ -10,14 +10,17 @@ import {
   HardDrive,
   PanelLeftClose,
   X,
+  FileSignature,
 } from 'lucide-react';
 
 import { UserProfile } from '../types';
+import officialMainLogo from '../assets/images/touch_of_wood_logo_1788191099643.png';
 
 export type PageId =
   | 'dashboard'
   | 'new'
   | 'quotations'
+  | 'documents'
   | 'customers'
   | 'products'
   | 'reports'
@@ -30,6 +33,7 @@ interface SidebarProps {
   onClose: () => void;
   draftCount: number;
   quotesCount: number;
+  documentSuitesCount?: number;
   productsCount: number;
   customersCount: number;
   logoUrl?: string;
@@ -44,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   draftCount,
   quotesCount,
+  documentSuitesCount = 0,
   productsCount,
   customersCount,
   logoUrl,
@@ -69,6 +74,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Quotations',
       icon: FileText,
       badge: quotesCount > 0 ? String(quotesCount) : null,
+    },
+    {
+      id: 'documents' as PageId,
+      label: 'Document Suite',
+      icon: FileSignature,
+      badge: documentSuitesCount > 0 ? String(documentSuitesCount) : null,
     },
     {
       id: 'customers' as PageId,
@@ -118,25 +129,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand Header */}
         <div className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {logoUrl ? (
-              <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shadow-lg shadow-black/20 flex-shrink-0 border border-slate-700">
-                <img
-                  src={logoUrl}
-                  alt="Touch Of Wood"
-                  className="w-full h-full object-contain"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            ) : (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-700 to-amber-950 flex flex-col items-center justify-center text-amber-100 shadow-lg shadow-amber-950/40 border border-amber-600/40 font-black text-xs flex-shrink-0">
-                <span>TOW</span>
-              </div>
-            )}
+            <div className="w-11 h-11 rounded-xl bg-white p-1 flex items-center justify-center shadow-lg shadow-black/20 flex-shrink-0 border border-slate-700">
+              <img
+                src={
+                  !logoUrl || logoUrl === '/touch_of_wood_logo.jpg' || logoUrl === '/logo.jpg'
+                    ? officialMainLogo
+                    : logoUrl
+                }
+                alt="Touch Of Wood DocuSuit V2"
+                className="w-full h-full object-contain"
+                referrerPolicy="no-referrer"
+              />
+            </div>
             <div>
               <div className="font-extrabold text-sm tracking-wide text-white flex items-center gap-1.5 leading-tight">
-                Touch Of Wood
+                <span>DocuSuit</span>
+                <span className="px-1.5 py-0.5 text-[9px] font-black tracking-wider uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-400/40">
+                  V2
+                </span>
               </div>
-              <p className="text-[10px] text-amber-400 font-medium leading-tight mt-0.5">Decoration Works LLC</p>
+              <p className="text-[10px] text-amber-400 font-medium leading-tight mt-0.5">Touch Of Wood LLC</p>
             </div>
           </div>
 
@@ -238,7 +250,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="text-[10px] font-mono text-emerald-400 font-bold">ACTIVE</span>
           </div>
           <p className="text-[10px] leading-relaxed text-slate-400">
-            Auto-saves locally with backup export &amp; shared quotation generator.
+            DocuSuit V2 • Auto-saves locally with backup export &amp; shared project documentation suite.
           </p>
         </div>
       </aside>

@@ -23,8 +23,8 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const titles: Record<PageId, { title: string; subtitle: string }> = {
     dashboard: {
-      title: 'Quotation Overview & Analytics',
-      subtitle: 'Monitor quote statuses, draft pipelines, and sales activity',
+      title: 'DocuSuit V2 Overview & Analytics',
+      subtitle: 'Monitor quotations, active contracts, document suites, and sales activity',
     },
     new: {
       title: 'Create & Cost Quotation',
@@ -33,6 +33,10 @@ export const Header: React.FC<HeaderProps> = ({
     quotations: {
       title: 'Quotations Directory',
       subtitle: 'Manage saved quotations, print client letterheads, or duplicate orders',
+    },
+    documents: {
+      title: 'DocuSuit V2 — Project Document Suite',
+      subtitle: 'Generate Contracts, Sample Confirmations, Variation Orders, Finish Certificates & Project Progression',
     },
     customers: {
       title: 'Customers Directory',
